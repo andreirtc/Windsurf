@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Linked List{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card bg-transparent mb-4">
+        <div class="card-body content-wrapper">
+            <nav aria-label="breadcrumb" class="breadcrumb-nav">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('works') }}" class="text-purple">Works</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Linked List</li>
+                </ol>
+            </nav>
+
+            <h1 class="text-center text-white mb-4">Linked List Operations</h1>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group mb-3">
+                        <label for="listInput">Enter Value:</label>
+                        <input type="text" class="form-control custom-input" id="listInput" placeholder="Enter a value">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="positionInput">Position (optional):</label>
+                        <input type="number" class="form-control custom-input" id="positionInput" placeholder="Enter position">
+                    </div>
+                    <div class="button-container">
+                        <div class="button-group">
+                            <h6 class="text-white mb-2">Basic Operations</h6>
+                            <div class="d-flex gap-2 mb-3 justify-content-center flex-wrap">
+                                <button class="btn btn-custom" id="insertFrontBtn">Insert Front</button>
+                                <button class="btn btn-custom" id="insertBackBtn">Insert Back</button>
+                                <button class="btn btn-custom" id="insertAtBtn">Insert At</button>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <h6 class="text-white mb-2">Delete Operations</h6>
+                            <div class="d-flex gap-2 mb-3 justify-content-center flex-wrap">
+                                <button class="btn btn-custom" id="deleteFrontBtn">Delete Front</button>
+                                <button class="btn btn-custom" id="deleteBackBtn">Delete Back</button>
+                                <button class="btn btn-custom" id="deleteAtBtn">Delete At</button>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <h6 class="text-white mb-2">Additional Operations</h6>
+                            <div class="d-flex gap-2 mb-3 justify-content-center flex-wrap">
+                                <button class="btn btn-custom" id="isEmptyBtn">Is Empty</button>
+                                <button class="btn btn-custom" id="sizeBtn">Size</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="visualization-section">
+                        <h4 class="text-white mb-3">Current List:</h4>
+                        <div class="list-display-container">
+                            <div id="listElements" class="list-display"></div>
+                        </div>
+                        <div class="operations-log-container mt-4">
+                            <h4 class="text-white mb-3">Operations Log:</h4>
+                            <div id="operationsLog" class="operations-log"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.text-purple {
+    color: #9b4dca !important;
+}
+
+.text-purple:hover {
+    color: #ff69b4 !important;
+    text-decoration: none;
+}
+
+.breadcrumb-nav {
+    background: rgba(155, 77, 202, 0.1);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.breadcrumb-item {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.breadcrumb-item.active {
+    color: white;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.custom-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #9b4dca;
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(155, 77, 202, 0.25);
+}
+
+.visualization-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.list-display-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+    min-height: 120px;
+}
+
+.list-display {
+    display: flex;
+    gap: 30px;
+    padding: 20px;
+    overflow-x: auto;
+    min-height: 80px;
+    align-items: center;
+    position: relative;
+}
+
+.list-element {
+    background: #9b4dca;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    min-width: 60px;
+    text-align: center;
+    position: relative;
+}
+
+.list-element::after {
+    content: '→';
+    position: absolute;
+    right: -25px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9b4dca;
+    font-size: 20px;
+}
+
+.list-element:last-child::after {
+    content: none;
+}
+
+.operations-log-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.operations-log {
+    color: white;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 10px;
+    height: 200px;
+    overflow-y: auto;
+}
+
+.operations-log div {
+    margin: 5px 0;
+    padding: 5px;
+    border-left: 3px solid #9b4dca;
+    background: rgba(155, 77, 202, 0.1);
+}
+
+.button-container {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.button-group {
+    margin-bottom: 15px;
+}
+
+.button-group:last-child {
+    margin-bottom: 0;
+}
+
+.button-group h6 {
+    text-align: center;
+    color: #9b4dca;
+    font-weight: 600;
+}
+
+.btn-custom {
+    background: #9b4dca;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    background: #8a44b8;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.content-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.card.bg-transparent {
+    border: none;
+}
+
+.container {
+    padding-top: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const listInput = document.getElementById('listInput');
+    const positionInput = document.getElementById('positionInput');
+    const insertFrontBtn = document.getElementById('insertFrontBtn');
+    const insertBackBtn = document.getElementById('insertBackBtn');
+    const insertAtBtn = document.getElementById('insertAtBtn');
+    const deleteFrontBtn = document.getElementById('deleteFrontBtn');
+    const deleteBackBtn = document.getElementById('deleteBackBtn');
+    const deleteAtBtn = document.getElementById('deleteAtBtn');
+    const isEmptyBtn = document.getElementById('isEmptyBtn');
+    const sizeBtn = document.getElementById('sizeBtn');
+    const listElements = document.getElementById('listElements');
+    const operationsLog = document.getElementById('operationsLog');
+    
+    let linkedList = [];
+    
+    function updateListDisplay() {
+        listElements.innerHTML = '';
+        linkedList.forEach((value, index) => {
+            const element = document.createElement('div');
+            element.className = 'list-element';
+            element.textContent = value;
+            if (index === 0) element.classList.add('head');
+            if (index === linkedList.length - 1) element.classList.add('tail');
+            listElements.appendChild(element);
+        });
+    }
+    
+    function addLogEntry(message) {
+        const entry = document.createElement('div');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        operationsLog.insertBefore(entry, operationsLog.firstChild);
+    }
+    
+    insertFrontBtn.addEventListener('click', function() {
+        const value = listInput.value.trim();
+        if (value) {
+            linkedList.unshift(value);
+            updateListDisplay();
+            addLogEntry(`Inserted at front: ${value}`);
+            listInput.value = '';
+        }
+    });
+    
+    insertBackBtn.addEventListener('click', function() {
+        const value = listInput.value.trim();
+        if (value) {
+            linkedList.push(value);
+            updateListDisplay();
+            addLogEntry(`Inserted at back: ${value}`);
+            listInput.value = '';
+        }
+    });
+    
+    insertAtBtn.addEventListener('click', function() {
+        const value = listInput.value.trim();
+        const position = parseInt(positionInput.value);
+        if (value && !isNaN(position) && position >= 0 && position <= linkedList.length) {
+            linkedList.splice(position, 0, value);
+            updateListDisplay();
+            addLogEntry(`Inserted at position ${position}: ${value}`);
+            listInput.value = '';
+            positionInput.value = '';
+        } else {
+            addLogEntry('Invalid position');
+        }
+    });
+    
+    deleteFrontBtn.addEventListener('click', function() {
+        if (linkedList.length > 0) {
+            const value = linkedList.shift();
+            updateListDisplay();
+            addLogEntry(`Deleted from front: ${value}`);
+        } else {
+            addLogEntry('Cannot delete: List is empty');
+        }
+    });
+    
+    deleteBackBtn.addEventListener('click', function() {
+        if (linkedList.length > 0) {
+            const value = linkedList.pop();
+            updateListDisplay();
+            addLogEntry(`Deleted from back: ${value}`);
+        } else {
+            addLogEntry('Cannot delete: List is empty');
+        }
+    });
+    
+    deleteAtBtn.addEventListener('click', function() {
+        const position = parseInt(positionInput.value);
+        if (!isNaN(position) && position >= 0 && position < linkedList.length) {
+            const value = linkedList.splice(position, 1)[0];
+            updateListDisplay();
+            addLogEntry(`Deleted at position ${position}: ${value}`);
+            positionInput.value = '';
+        } else {
+            addLogEntry('Invalid position for deletion');
+        }
+    });
+    
+    isEmptyBtn.addEventListener('click', function() {
+        if (linkedList.length === 0) {
+            addLogEntry('List is empty');
+        } else {
+            addLogEntry('List is not empty');
+        }
+    });
+    
+    sizeBtn.addEventListener('click', function() {
+        addLogEntry(`Size: ${linkedList.length}`);
+    });
+    
+    listInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            insertBackBtn.click();
+        }
+    });
+});
+</script>
+{% endblock %}

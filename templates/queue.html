@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Queue{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card bg-transparent mb-4">
+        <div class="card-body content-wrapper">
+            <nav aria-label="breadcrumb" class="breadcrumb-nav">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('works') }}" class="text-purple">Works</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Queue</li>
+                </ol>
+            </nav>
+
+            <h1 class="text-center text-white mb-4">Queue Operations</h1>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group mb-3">
+                        <label for="queueInput">Enter Value:</label>
+                        <input type="text" class="form-control custom-input" id="queueInput" placeholder="Enter a value">
+                    </div>
+                    <div class="button-container">
+                        <div class="button-group">
+                            <h6 class="text-white mb-2">Basic Operations</h6>
+                            <div class="d-flex gap-2 mb-3 justify-content-center">
+                                <button class="btn btn-custom" id="enqueueBtn">Enqueue</button>
+                                <button class="btn btn-custom" id="dequeueBtn">Dequeue</button>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <h6 class="text-white mb-2">Additional Operations</h6>
+                            <div class="d-flex gap-2 mb-3 justify-content-center flex-wrap">
+                                <button class="btn btn-custom" id="peekBtn">Peek</button>
+                                <button class="btn btn-custom" id="isEmptyBtn">Is Empty</button>
+                                <button class="btn btn-custom" id="sizeBtn">Size</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="visualization-section">
+                        <h4 class="text-white mb-3">Current Queue:</h4>
+                        <div class="queue-display-container">
+                            <div id="queueElements" class="queue-display"></div>
+                        </div>
+                        <div class="operations-log-container mt-4">
+                            <h4 class="text-white mb-3">Operations Log:</h4>
+                            <div id="operationsLog" class="operations-log"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.container {
+    padding-top: 2rem;
+}
+
+.text-purple {
+    color: #9b4dca !important;
+}
+
+.text-purple:hover {
+    color: #ff69b4 !important;
+    text-decoration: none;
+}
+
+.breadcrumb-nav {
+    background: rgba(155, 77, 202, 0.1);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.breadcrumb-item {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.breadcrumb-item.active {
+    color: white;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.custom-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #9b4dca;
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(155, 77, 202, 0.25);
+}
+
+.visualization-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.queue-display-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+    min-height: 120px;
+}
+
+.queue-display {
+    display: flex;
+    gap: 30px;
+    padding: 20px;
+    overflow-x: auto;
+    min-height: 80px;
+    align-items: center;
+    position: relative;
+}
+
+.queue-element {
+    background: #9b4dca;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    min-width: 60px;
+    text-align: center;
+    position: relative;
+}
+
+.queue-element::after {
+    content: '→';
+    position: absolute;
+    right: -25px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9b4dca;
+    font-size: 20px;
+}
+
+.queue-element:last-child::after {
+    content: none;
+}
+
+.operations-log-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.operations-log {
+    color: white;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 10px;
+    height: 200px;
+    overflow-y: auto;
+}
+
+.operations-log div {
+    margin: 5px 0;
+    padding: 5px;
+    border-left: 3px solid #9b4dca;
+    background: rgba(155, 77, 202, 0.1);
+}
+
+.button-container {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.button-group {
+    margin-bottom: 15px;
+}
+
+.button-group:last-child {
+    margin-bottom: 0;
+}
+
+.button-group h6 {
+    text-align: center;
+    color: #9b4dca;
+    font-weight: 600;
+}
+
+.btn-custom {
+    background: #9b4dca;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    background: #8a44b8;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.content-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.card.bg-transparent {
+    border: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const queueInput = document.getElementById('queueInput');
+    const enqueueBtn = document.getElementById('enqueueBtn');
+    const dequeueBtn = document.getElementById('dequeueBtn');
+    const queueElements = document.getElementById('queueElements');
+    const operationsLog = document.getElementById('operationsLog');
+    const peekBtn = document.getElementById('peekBtn');
+    const isEmptyBtn = document.getElementById('isEmptyBtn');
+    const sizeBtn = document.getElementById('sizeBtn');
+    
+    let queue = [];
+    
+    function updateQueueDisplay() {
+        queueElements.innerHTML = '';
+        queue.forEach((value, index) => {
+            const element = document.createElement('div');
+            element.className = 'queue-element';
+            if (index === 0) element.classList.add('front');
+            if (index === queue.length - 1) element.classList.add('rear');
+            element.textContent = value;
+            queueElements.appendChild(element);
+        });
+    }
+    
+    function addLogEntry(message) {
+        const entry = document.createElement('div');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        operationsLog.insertBefore(entry, operationsLog.firstChild);
+    }
+    
+    enqueueBtn.addEventListener('click', function() {
+        const value = queueInput.value.trim();
+        if (value) {
+            queue.push(value);
+            updateQueueDisplay();
+            addLogEntry(`Enqueued: ${value}`);
+            queueInput.value = '';
+        }
+    });
+    
+    dequeueBtn.addEventListener('click', function() {
+        if (queue.length > 0) {
+            const value = queue.shift();
+            updateQueueDisplay();
+            addLogEntry(`Dequeued: ${value}`);
+        } else {
+            addLogEntry('Cannot dequeue: Queue is empty');
+        }
+    });
+    
+    peekBtn.addEventListener('click', function() {
+        if (queue.length > 0) {
+            addLogEntry(`Peek: Front element is ${queue[0]}`);
+        } else {
+            addLogEntry('Cannot peek: Queue is empty');
+        }
+    });
+    
+    isEmptyBtn.addEventListener('click', function() {
+        const isEmpty = queue.length === 0;
+        addLogEntry(`Is Empty: ${isEmpty}`);
+    });
+    
+    sizeBtn.addEventListener('click', function() {
+        addLogEntry(`Size: ${queue.length}`);
+    });
+    
+    queueInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            enqueueBtn.click();
+        }
+    });
+});
+</script>
+{% endblock %}

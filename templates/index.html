@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="hero-section text-center py-5">
+        <h1 class="display-2 mb-4">Welcome to Windsurf</h1>
+        <p class="lead mb-4">Exploring Data Structures Through Interactive Visualization</p>
+        <div class="hero-buttons">
+            <a href="/works" class="btn btn-custom me-3">Explore Data Structures</a>
+            <a href="/profile" class="btn btn-custom">Meet the Team</a>
+        </div>
+    </div>
+
+    <div class="features-section py-5">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <h3>Interactive Learning</h3>
+                    <p>Experience data structures through dynamic visualizations and step-by-step animations.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <h3>Multiple Data Structures</h3>
+                    <p>Explore Stack, Queue, Linked List, and Binary Tree implementations with real-time visualization.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <h3>Professional Team</h3>
+                    <p>Meet our dedicated team of developers passionate about computer science education.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-section {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    margin: 2rem 0;
+    padding: 3rem !important;
+}
+
+.hero-section h1 {
+    background: linear-gradient(45deg, #9b4dca, #6d28d9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 2rem;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 5px 15px rgba(155, 77, 202, 0.2);
+}
+
+.feature-card h3 {
+    color: #9b4dca;
+    margin-bottom: 1rem;
+}
+
+.hero-buttons {
+    margin-top: 2rem;
+}
+
+.hero-buttons .btn {
+    min-width: 200px;
+}
+</style>
+{% endblock %}

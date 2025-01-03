@@ -1,0 +1,108 @@
+/* Global Styles */
+body {
+    background: linear-gradient(135deg, #2c1445 0%, #000000 100%);
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+/* Navbar Styles */
+.navbar {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+    font-size: 1.8rem;
+    font-weight: bold;
+    background: linear-gradient(45deg, #9b4dca, #6d28d9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-link {
+    color: #ffffff !important;
+    position: relative;
+    padding: 0.5rem 1rem;
+    margin: 0 0.2rem;
+    transition: all 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background: linear-gradient(45deg, #9b4dca, #6d28d9);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Works Section Styles */
+.works-container {
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    margin: 2rem auto;
+}
+
+.visualization-container {
+    min-height: 300px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+/* Interactive Elements */
+.btn-custom {
+    background: linear-gradient(45deg, #9b4dca, #6d28d9);
+    border: none;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(155, 77, 202, 0.4);
+}
+
+/* Input Fields */
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 25px;
+    padding: 0.5rem 1rem;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #9b4dca;
+    box-shadow: 0 0 0 0.2rem rgba(155, 77, 202, 0.25);
+    color: white;
+}
+
+/* Steps Display */
+.step-display {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem 0;
+    font-family: monospace;
+    transition: all 0.3s ease;
+}
+
+.step-display:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: translateX(5px);
+}
