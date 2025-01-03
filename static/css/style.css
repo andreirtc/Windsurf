@@ -1,7 +1,13 @@
 /* Global Styles */
+:root {
+    --primary-color: #9b4dca;
+    --text-primary: #ffffff;
+    --bg-dark: #1a1a1a;
+}
+
 body {
-    background: linear-gradient(135deg, #2c1445 0%, #000000 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d1f3d 100%);
+    color: var(--text-primary);
     min-height: 100vh;
 }
 
@@ -61,17 +67,93 @@ body {
     margin: 1rem 0;
 }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .content-wrapper {
+        padding: 1.5rem 1rem !important;
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .operations-log {
+        height: 150px;
+        margin-top: 1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Stack visualization adjustments */
+    .visualization-container {
+        overflow-x: auto;
+        padding: 1rem 0;
+    }
+
+    /* Profile page adjustments */
+    .team-member {
+        margin-bottom: 2rem;
+    }
+
+    .social-links {
+        justify-content: center;
+    }
+
+    /* Works page adjustments */
+    .data-structure-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Tablet Responsive Styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .content-wrapper {
+        padding: 2rem;
+    }
+
+    .btn {
+        min-width: auto;
+    }
+}
+
 /* Interactive Elements */
 .btn-custom {
-    background: linear-gradient(45deg, #9b4dca, #6d28d9);
-    border: none;
+    background: var(--primary-color);
     color: white;
+    border: none;
     padding: 0.5rem 1.5rem;
     border-radius: 25px;
     transition: all 0.3s ease;
 }
 
 .btn-custom:hover {
+    background: #8a44b8;
+    color: white;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(155, 77, 202, 0.4);
 }
@@ -87,9 +169,9 @@ body {
 
 .form-control:focus {
     background: rgba(255, 255, 255, 0.15);
-    border-color: #9b4dca;
-    box-shadow: 0 0 0 0.2rem rgba(155, 77, 202, 0.25);
+    border-color: var(--primary-color);
     color: white;
+    box-shadow: 0 0 0 0.2rem rgba(155, 77, 202, 0.25);
 }
 
 /* Steps Display */
@@ -105,4 +187,24 @@ body {
 .step-display:hover {
     background: rgba(0, 0, 0, 0.4);
     transform: translateX(5px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #8a44b8;
 }
