@@ -4,9 +4,17 @@
 
 {% block content %}
 <div class="container works-container">
-    <h2 class="text-center mb-5">Data Structures Visualization</h2>
+    <h2 class="text-center mb-5">Data Structures</h2>
     
     <div class="row g-4">
+        <div class="col-md-4">
+            <div class="data-structure-card">
+                <h3>Linked List</h3>
+                <p>Visualization of linked list operations and node connections.</p>
+                <a href="{{ url_for('linked_list') }}" class="btn btn-custom">Explore Linked List</a>
+            </div>
+        </div>
+        
         <div class="col-md-4">
             <div class="data-structure-card">
                 <h3>Stack</h3>
@@ -33,17 +41,17 @@
         
         <div class="col-md-4">
             <div class="data-structure-card">
-                <h3>Linked List</h3>
-                <p>Visualization of linked list operations and node connections.</p>
-                <a href="{{ url_for('linked_list') }}" class="btn btn-custom">Explore Linked List</a>
+                <h3>Binary Tree</h3>
+                <p>Tree visualization with traversal animations.</p>
+                <a href="{{ url_for('binary_tree_page') }}" class="btn btn-custom">Explore Binary Tree</a>
             </div>
         </div>
         
         <div class="col-md-4">
             <div class="data-structure-card">
-                <h3>Binary Tree</h3>
-                <p>Tree visualization with traversal animations.</p>
-                <a href="{{ url_for('binary_tree') }}" class="btn btn-custom">Explore Binary Tree</a>
+                <h3>Graph</h3>
+                <p>Metro Manila Railway Network - Find the shortest path between stations using graph algorithms.</p>
+                <a href="{{ url_for('graph_page') }}" class="btn btn-custom">Explore Graph</a>
             </div>
         </div>
     </div>

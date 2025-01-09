@@ -133,12 +133,30 @@
 
 .list-display {
     display: flex;
-    gap: 30px;
+    gap: 5px;
     padding: 20px;
     overflow-x: auto;
-    min-height: 80px;
+    align-items: center;
+    min-height: 100px;
+}
+
+.node {
+    display: flex;
     align-items: center;
     position: relative;
+    margin-top: 30px;
+}
+
+.node-indicator {
+    position: absolute;
+    color: #9b4dca;
+    font-weight: bold;
+    font-size: 14px;
+    top: -25px;
+    text-align: center;
+    width: 60px;
+    left: 0;
+    white-space: nowrap;
 }
 
 .list-element {
@@ -151,18 +169,16 @@
     position: relative;
 }
 
-.list-element::after {
-    content: '→';
-    position: absolute;
-    right: -25px;
-    top: 50%;
-    transform: translateY(-50%);
+.arrow {
     color: #9b4dca;
     font-size: 20px;
-}
-
-.list-element:last-child::after {
-    content: none;
+    margin: 0 10px;
+    font-weight: bold;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
 }
 
 .operations-log-container {
@@ -236,6 +252,17 @@
 .container {
     padding-top: 2rem;
 }
+
+label {
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.form-group label {
+    color: white;
+    margin-bottom: 0.5rem;
+    display: block;
+}
 </style>
 {% endblock %}
 
@@ -258,14 +285,47 @@ document.addEventListener('DOMContentLoaded', function() {
     let linkedList = [];
     
     function updateListDisplay() {
-        listElements.innerHTML = '';
+        const listDisplay = document.querySelector('.list-display');
+        listDisplay.innerHTML = '';
+        
         linkedList.forEach((value, index) => {
+            const node = document.createElement('div');
+            node.className = 'node';
+            
+            // Create the indicator text
+            if (linkedList.length === 1) {
+                const indicator = document.createElement('div');
+                indicator.className = 'node-indicator';
+                indicator.textContent = 'Head/Tail';
+                node.appendChild(indicator);
+            } else {
+                if (index === 0) {
+                    const headIndicator = document.createElement('div');
+                    headIndicator.className = 'node-indicator';
+                    headIndicator.textContent = 'Head';
+                    node.appendChild(headIndicator);
+                }
+                if (index === linkedList.length - 1) {
+                    const tailIndicator = document.createElement('div');
+                    tailIndicator.className = 'node-indicator';
+                    tailIndicator.textContent = 'Tail';
+                    node.appendChild(tailIndicator);
+                }
+            }
+            
             const element = document.createElement('div');
             element.className = 'list-element';
             element.textContent = value;
-            if (index === 0) element.classList.add('head');
-            if (index === linkedList.length - 1) element.classList.add('tail');
-            listElements.appendChild(element);
+            node.appendChild(element);
+            
+            if (index < linkedList.length - 1) {
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                arrow.innerHTML = '→';
+                node.appendChild(arrow);
+            }
+            
+            listDisplay.appendChild(node);
         });
     }
     

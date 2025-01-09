@@ -125,12 +125,30 @@
 
 .deque-display {
     display: flex;
-    gap: 30px;
+    gap: 5px;
     padding: 20px;
     overflow-x: auto;
-    min-height: 80px;
+    align-items: center;
+    min-height: 100px;
+}
+
+.node {
+    display: flex;
     align-items: center;
     position: relative;
+    margin-top: 30px;
+}
+
+.node-indicator {
+    position: absolute;
+    color: #9b4dca;
+    font-weight: bold;
+    font-size: 14px;
+    top: -25px;
+    text-align: center;
+    width: 60px;
+    left: 0;
+    white-space: nowrap;
 }
 
 .deque-element {
@@ -143,18 +161,16 @@
     position: relative;
 }
 
-.deque-element::after {
-    content: '↔';
-    position: absolute;
-    right: -25px;
-    top: 50%;
-    transform: translateY(-50%);
+.arrow {
     color: #9b4dca;
     font-size: 20px;
-}
-
-.deque-element:last-child::after {
-    content: none;
+    margin: 0 10px;
+    font-weight: bold;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
 }
 
 .operations-log-container {
@@ -228,6 +244,11 @@
 .container {
     padding-top: 2rem;
 }
+
+label {
+    color: white;
+    margin-bottom: 0.5rem;
+}
 </style>
 {% endblock %}
 
@@ -247,12 +268,47 @@ document.addEventListener('DOMContentLoaded', function() {
     let deque = [];
     
     function updateDequeDisplay() {
-        dequeElements.innerHTML = '';
+        const dequeDisplay = document.querySelector('.deque-display');
+        dequeDisplay.innerHTML = '';
+        
         deque.forEach((value, index) => {
+            const node = document.createElement('div');
+            node.className = 'node';
+            
+            // Create the indicator text
+            if (deque.length === 1) {
+                const indicator = document.createElement('div');
+                indicator.className = 'node-indicator';
+                indicator.textContent = 'Front/Rear';
+                node.appendChild(indicator);
+            } else {
+                if (index === 0) {
+                    const frontIndicator = document.createElement('div');
+                    frontIndicator.className = 'node-indicator';
+                    frontIndicator.textContent = 'Front';
+                    node.appendChild(frontIndicator);
+                }
+                if (index === deque.length - 1) {
+                    const rearIndicator = document.createElement('div');
+                    rearIndicator.className = 'node-indicator';
+                    rearIndicator.textContent = 'Rear';
+                    node.appendChild(rearIndicator);
+                }
+            }
+            
             const element = document.createElement('div');
             element.className = 'deque-element';
             element.textContent = value;
-            dequeElements.appendChild(element);
+            node.appendChild(element);
+            
+            if (index < deque.length - 1) {
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                arrow.innerHTML = '↔';
+                node.appendChild(arrow);
+            }
+            
+            dequeDisplay.appendChild(node);
         });
     }
     

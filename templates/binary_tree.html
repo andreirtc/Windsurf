@@ -21,10 +21,11 @@
                         <label for="treeInput">Enter Value:</label>
                         <input type="text" class="form-control" id="treeInput" placeholder="Enter a value or expression">
                     </div>
-                    <div class="d-flex gap-2 flex-wrap mb-3">
+                    <div class="button-group mb-3">
                         <button class="btn btn-custom" id="insertBtn">Insert</button>
                         <button class="btn btn-custom" id="deleteBtn">Delete</button>
                         <button class="btn btn-custom" id="searchBtn">Search</button>
+                        <button class="btn btn-danger" id="clearBtn">Clear Tree</button>
                     </div>
                     <div class="form-group mb-3">
                         <label>Expression Tree:</label>
@@ -81,6 +82,17 @@
 
 .breadcrumb-item + .breadcrumb-item::before {
     color: #ffffff;
+}
+
+.button-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    align-items: center;
+}
+
+.button-group .btn {
+    white-space: nowrap;
 }
 
 .tree-display {
@@ -180,9 +192,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchBtn = document.getElementById('searchBtn');
     const createExpressionBtn = document.getElementById('createExpressionBtn');
     const evaluateBtn = document.getElementById('evaluateBtn');
+    const clearBtn = document.getElementById('clearBtn');
     
     let root = null;
     let scale = 1;
+    const operators = new Set(['+', '-', '*', '/']);
     
     function addLogEntry(message) {
         const entry = document.createElement('div');
@@ -201,17 +215,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function insertNode(node, value) {
-        if (value < node.value) {
-            if (node.left === null) {
-                node.left = new TreeNode(value);
+        // Handle numeric values
+        if (!isNaN(value) && !isNaN(node.value)) {
+            if (parseFloat(value) < parseFloat(node.value)) {
+                if (node.left === null) {
+                    node.left = new TreeNode(value);
+                } else {
+                    insertNode(node.left, value);
+                }
             } else {
-                insertNode(node.left, value);
+                if (node.right === null) {
+                    node.right = new TreeNode(value);
+                } else {
+                    insertNode(node.right, value);
+                }
             }
         } else {
-            if (node.right === null) {
+            // Handle non-numeric values (like operators)
+            if (node.left === null) {
+                node.left = new TreeNode(value);
+            } else if (node.right === null) {
                 node.right = new TreeNode(value);
             } else {
-                insertNode(node.right, value);
+                insertNode(node.left, value);
             }
         }
     }
@@ -219,55 +245,48 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTreeDisplay() {
         treeContainer.innerHTML = '';
         if (root) {
-            const nodePositions = calculateNodePositions(root, 0, 0, 800);
-            drawTree(nodePositions);
+            const positions = calculateNodePositions(root, 0, 0, treeContainer.clientWidth);
+            drawTree(positions);
         }
     }
     
     function calculateNodePositions(node, level, start, end) {
-        if (!node) return [];
+        if (!node) return new Map();
         
-        const positions = [];
+        const positions = new Map();
         const x = start + (end - start) / 2;
         const y = level * 80 + 40;
         
-        positions.push({ node: node, x: x, y: y });
+        positions.set(node, { x, y, value: node.value });
         
         const leftPositions = calculateNodePositions(node.left, level + 1, start, x);
         const rightPositions = calculateNodePositions(node.right, level + 1, x, end);
         
-        return [...positions, ...leftPositions, ...rightPositions];
+        return new Map([...positions, ...leftPositions, ...rightPositions]);
     }
     
     function drawTree(positions) {
-        positions.forEach(pos => {
-            if (pos.node.left) {
-                const leftPos = positions.find(p => p.node === pos.node.left);
-                drawEdge(pos, leftPos);
-            }
-            if (pos.node.right) {
-                const rightPos = positions.find(p => p.node === pos.node.right);
-                drawEdge(pos, rightPos);
-            }
-        });
-        
-        positions.forEach(pos => {
+        positions.forEach((pos, node) => {
+            // Create node element
             const nodeElement = document.createElement('div');
             nodeElement.className = 'tree-node';
-            if (isOperator(pos.node.value)) {
+            if (operators.has(node.value)) {
                 nodeElement.classList.add('operator');
             }
-            nodeElement.setAttribute('data-value', pos.node.value);
             nodeElement.style.left = `${pos.x}px`;
             nodeElement.style.top = `${pos.y}px`;
-            nodeElement.textContent = pos.node.value;
-            
-            // Add tooltip with traversal information
-            nodeElement.title = `Value: ${pos.node.value}
-Left: ${pos.node.left ? pos.node.left.value : 'null'}
-Right: ${pos.node.right ? pos.node.right.value : 'null'}`;
-            
+            nodeElement.textContent = node.value;
             treeContainer.appendChild(nodeElement);
+            
+            // Draw edges to children
+            if (node.left) {
+                const leftPos = positions.get(node.left);
+                drawEdge(pos, leftPos);
+            }
+            if (node.right) {
+                const rightPos = positions.get(node.right);
+                drawEdge(pos, rightPos);
+            }
         });
     }
     
@@ -315,87 +334,155 @@ Right: ${pos.node.right ? pos.node.right.value : 'null'}`;
     
     function search(node, value) {
         if (!node) return null;
-        if (node.value === value) return node;
-        return search(node.left, value) || search(node.right, value);
+        
+        if (!isNaN(value) && !isNaN(node.value)) {
+            if (parseFloat(value) === parseFloat(node.value)) return node;
+            if (parseFloat(value) < parseFloat(node.value)) return search(node.left, value);
+            return search(node.right, value);
+        } else {
+            if (String(node.value) === String(value)) return node;
+            const leftResult = search(node.left, value);
+            if (leftResult) return leftResult;
+            return search(node.right, value);
+        }
     }
     
     function isOperator(char) {
-        return ['+', '-', '*', '/', '^'].includes(char);
+        return operators.has(char);
     }
     
     function createExpressionTree(expression) {
-        const tokens = expression.split(' ');
-        const stack = [];
-        
-        for (let token of tokens) {
-            if (isOperator(token)) {
-                const node = new TreeNode(token);
-                node.right = stack.pop();
-                node.left = stack.pop();
-                stack.push(node);
+        // Send the expression to the server for processing
+        fetch('/create_expression_tree', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ expression: expression })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                root = data.tree;
+                updateTreeDisplay();
+                addLogEntry(`Created expression tree for: ${expression}`);
             } else {
-                stack.push(new TreeNode(token));
+                addLogEntry(`Error: ${data.error}`);
             }
-        }
-        
-        return stack[0];
+        })
+        .catch(error => {
+            addLogEntry(`Error: ${error.message}`);
+        });
     }
     
     function evaluateTree(node) {
         if (!node) return 0;
-        if (!isOperator(node.value)) return parseFloat(node.value);
         
-        const left = evaluateTree(node.left);
-        const right = evaluateTree(node.right);
+        if (!isOperator(node.value)) {
+            return parseFloat(node.value);
+        }
         
-        switch (node.value) {
-            case '+': return left + right;
-            case '-': return left - right;
-            case '*': return left * right;
-            case '/': return left / right;
-            case '^': return Math.pow(left, right);
+        const leftVal = evaluateTree(node.left);
+        const rightVal = evaluateTree(node.right);
+        
+        switch(node.value) {
+            case '+': return leftVal + rightVal;
+            case '-': return leftVal - rightVal;
+            case '*': return leftVal * rightVal;
+            case '/': return rightVal !== 0 ? leftVal / rightVal : Infinity;
             default: return 0;
         }
     }
     
     insertBtn.addEventListener('click', function() {
-        const value = parseInt(treeInput.value);
-        if (!isNaN(value)) {
-            insert(value);
-            addLogEntry(`Inserted: ${value}`);
+        const value = treeInput.value.trim();
+        if (value) {
+            fetch('/insert_node', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ value: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Convert the server's tree structure to our TreeNode structure
+                    function convertToTreeNode(nodeData) {
+                        if (!nodeData) return null;
+                        const node = new TreeNode(nodeData.value);
+                        node.left = convertToTreeNode(nodeData.left);
+                        node.right = convertToTreeNode(nodeData.right);
+                        return node;
+                    }
+                    
+                    root = convertToTreeNode(data.tree);
+                    updateTreeDisplay();
+                    addLogEntry(data.message);
+                } else {
+                    addLogEntry(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                addLogEntry(`Error: ${error.message}`);
+            });
             treeInput.value = '';
         }
     });
     
-    inorderBtn.addEventListener('click', function() {
-        const result = inorderTraversal(root);
-        addLogEntry(`Inorder traversal: ${result.join(' → ')}`);
-    });
-    
-    preorderBtn.addEventListener('click', function() {
-        const result = preorderTraversal(root);
-        addLogEntry(`Preorder traversal: ${result.join(' → ')}`);
-    });
-    
-    postorderBtn.addEventListener('click', function() {
-        const result = postorderTraversal(root);
-        addLogEntry(`Postorder traversal: ${result.join(' → ')}`);
+    deleteBtn.addEventListener('click', function() {
+        const value = treeInput.value.trim();
+        if (value) {
+            fetch('/delete_node', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ value: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Convert the server's tree structure to our TreeNode structure
+                    function convertToTreeNode(nodeData) {
+                        if (!nodeData) return null;
+                        const node = new TreeNode(nodeData.value);
+                        node.left = convertToTreeNode(nodeData.left);
+                        node.right = convertToTreeNode(nodeData.right);
+                        return node;
+                    }
+                    
+                    root = convertToTreeNode(data.tree);
+                    updateTreeDisplay();
+                    addLogEntry(data.message);
+                } else {
+                    addLogEntry(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                addLogEntry(`Error: ${error.message}`);
+            });
+            treeInput.value = '';
+        }
     });
     
     searchBtn.addEventListener('click', function() {
         const value = treeInput.value.trim();
         if (value) {
-            const found = search(root, value);
-            if (found) {
-                addLogEntry(`Found value: ${value}`);
+            const numValue = parseFloat(value);
+            const node = search(root, isNaN(numValue) ? value : numValue);
+            if (node) {
+                addLogEntry(`Found: ${value}`);
                 // Highlight the found node
-                const nodeElement = document.querySelector(`[data-value="${value}"]`);
-                if (nodeElement) {
-                    nodeElement.classList.add('highlight');
-                    setTimeout(() => nodeElement.classList.remove('highlight'), 2000);
-                }
+                const nodes = document.querySelectorAll('.tree-node');
+                nodes.forEach(n => {
+                    if (n.textContent === String(value)) {
+                        n.classList.add('highlight');
+                        setTimeout(() => n.classList.remove('highlight'), 2000);
+                    }
+                });
             } else {
-                addLogEntry(`Value not found: ${value}`);
+                addLogEntry(`Not found: ${value}`);
             }
             treeInput.value = '';
         }
@@ -404,9 +491,7 @@ Right: ${pos.node.right ? pos.node.right.value : 'null'}`;
     createExpressionBtn.addEventListener('click', function() {
         const expression = treeInput.value.trim();
         if (expression) {
-            root = createExpressionTree(expression);
-            updateTreeDisplay();
-            addLogEntry(`Created expression tree for: ${expression}`);
+            createExpressionTree(expression);
             treeInput.value = '';
         }
     });
@@ -420,19 +505,50 @@ Right: ${pos.node.right ? pos.node.right.value : 'null'}`;
         }
     });
     
-    treeInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            insertBtn.click();
+    inorderBtn.addEventListener('click', function() {
+        if (root) {
+            const result = inorderTraversal(root);
+            addLogEntry(`Inorder traversal: ${result.join(' ')}`);
         }
     });
     
-    treeContainer.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        scale *= delta;
-        scale = Math.min(Math.max(0.5, scale), 2); // Limit scale between 0.5 and 2
-        treeContainer.style.transform = `scale(${scale})`;
+    preorderBtn.addEventListener('click', function() {
+        if (root) {
+            const result = preorderTraversal(root);
+            addLogEntry(`Preorder traversal: ${result.join(' ')}`);
+        }
     });
+    
+    postorderBtn.addEventListener('click', function() {
+        if (root) {
+            const result = postorderTraversal(root);
+            addLogEntry(`Postorder traversal: ${result.join(' ')}`);
+        }
+    });
+    
+    clearBtn.addEventListener('click', function() {
+        fetch('/clear_tree', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                root = null;
+                updateTreeDisplay();
+                addLogEntry(data.message);
+            } else {
+                addLogEntry(`Error: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            addLogEntry(`Error: ${error.message}`);
+        });
+    });
+    
+    window.addEventListener('resize', updateTreeDisplay);
 });
 </script>
 {% endblock %}
