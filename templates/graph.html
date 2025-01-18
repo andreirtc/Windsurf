@@ -21,7 +21,7 @@
                         <label for="startStation">Departure Station:</label>
                         <select class="form-select custom-select" id="startStation">
                             <option value="">Select departure station</option>
-                            <optgroup label="LRT Line 1 (Green Line)">
+                            <optgroup label="LRT Line 1 (Red Line)">
                             </optgroup>
                             <optgroup label="LRT Line 2 (Purple Line)">
                             </optgroup>
@@ -33,7 +33,7 @@
                         <label for="endStation">Destination Station:</label>
                         <select class="form-select custom-select" id="endStation">
                             <option value="">Select destination station</option>
-                            <optgroup label="LRT Line 1 (Green Line)">
+                            <optgroup label="LRT Line 1 (Red Line)">
                             </optgroup>
                             <optgroup label="LRT Line 2 (Purple Line)">
                             </optgroup>
@@ -48,7 +48,7 @@
                         <div class="line-legend">
                             <div class="line-item">
                                 <span class="line-color lrt1"></span>
-                                <span>LRT Line 1 (Green Line)</span>
+                                <span>LRT Line 1 (Red Line)</span>
                             </div>
                             <div class="line-item">
                                 <span class="line-color lrt2"></span>
@@ -61,19 +61,19 @@
                         </div>
                     </div>
                     
-                    <!-- Add operations log section -->
-                    <div class="operations-log-container">
-                        <h4 class="text-white mb-3">Operations Log:</h4>
-                        <div id="operationsLog" class="log-content"></div>
+                    <div class="path-details-container mt-4">
+                        <h4 class="text-white mb-3">Path Details:</h4>
+                        <div id="pathDetails" class="path-details"></div>
                     </div>
                 </div>
                 <div class="col-md-8">
-                    <div id="networkVisualization">
-                        <div id="graphContainer" class="graph-display"></div>
-                    </div>
-                    <div class="mt-4">
-                        <h4 class="text-white mb-3">Path Details:</h4>
-                        <div id="pathDetails" class="path-details"></div>
+                    <div id="networkVisualization" class="network-container">
+                        <object id="railwayMap" data="{{ url_for('static', filename='images/railway_network.svg') }}" type="image/svg+xml" class="railway-map"></object>
+                        <div class="zoom-controls">
+                            <button class="zoom-btn" id="zoomIn">+</button>
+                            <button class="zoom-btn" id="zoomOut">−</button>
+                            <button class="zoom-btn" id="resetZoom">↺</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -204,18 +204,18 @@ label {
 }
 
 .lrt1 {
-    background-color: #4CAF50;  /* Green */
+    background-color: #008000;  /* Green */
 }
 
 .lrt2 {
-    background-color: #9C27B0;  /* Purple */
+    background-color: #800080;  /* Purple */
 }
 
 .mrt3 {
-    background-color: #FFC107;  /* Yellow */
+    background-color: #FFA500;  /* Yellow */
 }
 
-.operations-log-container {
+.path-details-container {
     background: rgba(35, 31, 43, 0.95);
     border-radius: 8px;
     padding: 15px;
@@ -224,440 +224,527 @@ label {
     overflow-y: auto;
 }
 
-.log-content {
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(35, 31, 43, 0.95);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.zoom-btn {
+    background: none;
+    border: none;
     color: white;
-    font-size: 14px;
+    font-size: 18px;
+    cursor: pointer;
 }
 
-.log-entry {
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.log-entry:last-child {
-    border-bottom: none;
-}
-
-.station-name {
-    font-weight: bold;
-}
-
-.line-info {
-    font-size: 12px;
+.zoom-btn:hover {
     color: #ccc;
+}
+
+.station-highlight {
+    fill: #00FFFF !important;
+    r: 15 !important;
+    box-shadow: 0 0 20px #00FFFF,
+               0 0 40px #00FFFF,
+               0 0 60px #00FFFF,
+               0 0 80px #00FFFF,
+               0 0 100px #00FFFF !important;
+}
+
+.path-highlight {
+    stroke: #00FFFF !important;
+    stroke-width: 10 !important;
+    box-shadow: 0 0 20px #00FFFF,
+               0 0 40px #00FFFF,
+               0 0 60px #00FFFF !important;
+}
+
+.hover-highlight {
+    fill: #00FFFF !important;
+    r: 12 !important;
+}
+
+.selected-station {
+    fill: #00FFFF !important;
+    r: 12 !important;
 }
 </style>
 {% endblock %}
 
 {% block extra_js %}
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const startSelect = document.getElementById('startStation');
     const endSelect = document.getElementById('endStation');
     const findPathBtn = document.getElementById('findPathBtn');
     const pathDetails = document.getElementById('pathDetails');
-    const container = document.getElementById('graphContainer');
+    const svgObject = document.getElementById('railwayMap');
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+    const resetZoomBtn = document.getElementById('resetZoom');
+    let currentScale = 1;
+    let isDragging = false;
+    let startX, startY, translateX = 0, translateY = 0;
     
-    let network = null;
-    let stations = [];
-    let lines = {};
-    
-    // Initialize the network with empty data first
-    const data = {
-        nodes: new vis.DataSet([]),
-        edges: new vis.DataSet([])
+    // Initialize stations data with correct order
+    const stations = {
+        'LRT1': [
+            'Fernando Poe Jr.',
+            'Balintawak',
+            'Monumento',
+            '5th Avenue',
+            'R. Papa',
+            'Abad Santos',
+            'Blumentritt',
+            'Tayuman',
+            'Bambang',
+            'Doroteo Jose',
+            'Carriedo',
+            'Central Terminal',
+            'United Nations',
+            'Pedro Gil',
+            'Quirino',
+            'Vito Cruz',
+            'Gil Puyat',
+            'Libertad',
+            'EDSA',
+            'Baclaran',
+            'Redemptorist - Aseana',
+            'MIA',
+            'Asia World',
+            'Ninoy Aquino Ave.',
+            'Dr. Santos'
+        ],
+        'LRT2': [
+            'Recto',
+            'Legarda',
+            'Pureza',
+            'V. Mapa',
+            'J. Ruiz',
+            'Gilmore',
+            'Betty Go-Belmonte',
+            'Araneta Center-Cubao',
+            'Anonas',
+            'Katipunan',
+            'Santolan',
+            'Marikina-Pasig',
+            'Antipolo'
+        ],
+        'MRT3': [
+            'North Avenue',
+            'Quezon Avenue',
+            'GMA Kamuning',
+            'Araneta Center-Cubao',
+            'Santolan-Annapolis',
+            'Ortigas',
+            'Shaw Boulevard',
+            'Boni',
+            'Guadalupe',
+            'Buendia',
+            'Ayala',
+            'Magallanes',
+            'Taft Avenue'
+        ]
     };
-    
-    const options = {
-        nodes: {
-            shape: 'dot',
-            size: 20,
-            font: {
-                size: 16,
-                color: '#ffffff',
-                face: 'Arial',
-                strokeWidth: 2,
-                strokeColor: 'rgba(0,0,0,0.5)'
-            },
-            borderWidth: 2,
-            scaling: {
-                min: 20,
-                max: 30
-            }
-        },
-        edges: {
-            width: 4,
-            selectionWidth: 6,
-            smooth: {
-                type: 'straightCross',
-                roundness: 0.5
-            }
-        },
-        physics: {
-            enabled: true,
-            barnesHut: {
-                gravitationalConstant: -3000,
-                centralGravity: 0.5,
-                springLength: 200,
-                springConstant: 0.05,
-                damping: 0.1
-            },
-            stabilization: {
-                iterations: 2000,
-                updateInterval: 25
-            }
-        },
-        interaction: {
-            hover: true,
-            tooltipDelay: 200,
-            zoomView: true,
-            dragView: true,
-            navigationButtons: true,
-            keyboard: true
-        },
-        height: '600px',
-        layout: {
-            randomSeed: 42,
-            improvedLayout: true,
-            hierarchical: {
-                enabled: true,
-                direction: 'UD',
-                sortMethod: 'directed',
-                nodeSpacing: 150,
-                levelSeparation: 150,
-                treeSpacing: 200
-            }
-        }
-    };
-    
-    // Create network with empty data first
-    network = new vis.Network(container, data, options);
-    
-    // Fetch stations and update the visualization
-    fetch('/get_stations')
-        .then(response => response.json())
-        .then(data => {
-            stations = data.stations;
-            lines = data.lines;
-            
-            // Populate dropdowns with grouped stations
-            const startGroups = startSelect.getElementsByTagName('optgroup');
-            const endGroups = endSelect.getElementsByTagName('optgroup');
-            
-            // LRT1 stations
-            lines.LRT1.forEach(station => {
-                const option1 = new Option(station, station);
-                const option2 = new Option(station, station);
-                startGroups[0].appendChild(option1);
-                endGroups[0].appendChild(option2.cloneNode(true));
-            });
-            
-            // LRT2 stations
-            lines.LRT2.forEach(station => {
-                const option1 = new Option(station, station);
-                const option2 = new Option(station, station);
-                startGroups[1].appendChild(option1);
-                endGroups[1].appendChild(option2.cloneNode(true));
-            });
-            
-            // MRT3 stations
-            lines.MRT3.forEach(station => {
-                const option1 = new Option(station, station);
-                const option2 = new Option(station, station);
-                startGroups[2].appendChild(option1);
-                endGroups[2].appendChild(option2.cloneNode(true));
-            });
-            
-            // Create and update the network visualization
-            createNetwork(lines);
-        });
-    
-    function createNetwork(lines) {
-        const container = document.getElementById('graphContainer');
-        
-        const nodePositions = {
-            // LRT-1 (Red Line) - Vertical alignment
-            'Fernando Poe Jr.': { x: -200, y: -250 },
-            'Balintawak': { x: -200, y: -220 },
-            'Monumento': { x: -200, y: -190 },
-            '5th Avenue': { x: -200, y: -160 },
-            'R. Papa': { x: -200, y: -130 },
-            'Abad Santos': { x: -200, y: -100 },
-            'Blumentritt': { x: -200, y: -70 },
-            'Tayuman': { x: -200, y: -40 },
-            'Bambang': { x: -200, y: -10 },
-            'Doroteo Jose': { x: -200, y: 20 },
-            'Carriedo': { x: -200, y: 50 },
-            'Central Terminal': { x: -200, y: 80 },
-            'United Nations': { x: -200, y: 110 },
-            'Pedro Gil': { x: -200, y: 140 },
-            'Quirino': { x: -200, y: 170 },
-            'Vito Cruz': { x: -200, y: 200 },
-            'Gil Puyat': { x: -200, y: 230 },
-            'Libertad': { x: -200, y: 260 },
-            'EDSA': { x: -200, y: 290 },
-            'Baclaran': { x: -200, y: 320 },
 
-            // LRT-2 (Green Line) - Horizontal alignment
-            'Recto': { x: -150, y: 50 },
-            'Legarda': { x: -100, y: 50 },
-            'Pureza': { x: -50, y: 50 },
-            'V. Mapa': { x: 0, y: 50 },
-            'J. Ruiz': { x: 50, y: 50 },
-            'Gilmore': { x: 100, y: 50 },
-            'Betty Go-Belmonte': { x: 150, y: 50 },
-            'Araneta Center-Cubao': { x: 200, y: 50 },
-            'Anonas': { x: 250, y: 50 },
-            'Katipunan': { x: 300, y: 50 },
-            'Santolan': { x: 350, y: 50 },
-            'Marikina-Pasig': { x: 400, y: 50 },
-            'Antipolo': { x: 450, y: 50 },
-
-            // MRT-3 (Yellow Line) - Mixed alignment
-            'North Avenue': { x: 200, y: -250 },
-            'Quezon Avenue': { x: 200, y: -190 },
-            'GMA Kamuning': { x: 200, y: -130 },
-            'Santolan-Annapolis': { x: 200, y: 110 },
-            'Ortigas': { x: 200, y: 170 },
-            'Shaw Boulevard': { x: 200, y: 230 },
-            'Boni': { x: 200, y: 260 },
-            'Guadalupe': { x: 200, y: 290 },
-            'Buendia': { x: 150, y: 290 },
-            'Ayala': { x: 100, y: 290 },
-            'Magallanes': { x: 50, y: 290 },
-            'Taft Avenue': { x: -200, y: 290 }  // Connects with EDSA station
-        };
-
-        const nodes = new vis.DataSet();
-        const edges = new vis.DataSet();
-        const nodeMap = {};
-
-        // Add nodes for each line with appropriate colors
-        Object.entries(lines).forEach(([line, stations]) => {
-            const color = line === 'LRT1' ? '#FF0000' : 
-                         line === 'LRT2' ? '#008000' : 
-                         '#FFA500';  // MRT3
-
-            stations.forEach((station, index) => {
-                if (nodePositions[station]) {
-                    const nodeId = nodes.length + 1;
-                    nodeMap[station] = nodeId;
-                    
-                    // Check if it's an interchange station
-                    const isInterchange = (
-                        station === 'Doroteo Jose' || 
-                        station === 'Recto' || 
-                        station === 'EDSA' || 
-                        station === 'Taft Avenue' || 
-                        station === 'Araneta Center-Cubao'
-                    );
-
-                    nodes.add({
-                        id: nodeId,
-                        label: station,
-                        x: nodePositions[station].x,
-                        y: nodePositions[station].y,
-                        color: {
-                            background: color,
-                            border: isInterchange ? '#FFFFFF' : color
-                        },
-                        borderWidth: isInterchange ? 3 : 2,
-                        size: isInterchange ? 18 : 15,
-                        font: {
-                            color: '#ffffff',
-                            size: 12
-                        },
-                        fixed: true,
-                        physics: false
-                    });
-
-                    // Add edges between consecutive stations in the same line
-                    if (index > 0) {
-                        const prevStation = stations[index - 1];
-                        if (nodeMap[prevStation]) {
-                            edges.add({
-                                from: nodeMap[prevStation],
-                                to: nodeId,
-                                color: color,
-                                width: 3,
-                                smooth: {
-                                    type: 'continuous',
-                                    roundness: 0
-                                }
-                            });
-                        }
-                    }
-                }
+    // Populate dropdowns
+    function populateDropdowns() {
+        const lines = ['LRT1', 'LRT2', 'MRT3'];
+        [startSelect, endSelect].forEach(select => {
+            const groups = select.getElementsByTagName('optgroup');
+            lines.forEach((line, index) => {
+                stations[line].forEach(station => {
+                    const option = new Option(station, station);
+                    groups[index].appendChild(option.cloneNode(true));
+                });
             });
         });
+    }
 
-        // Network configuration
-        const options = {
-            nodes: {
-                shape: 'dot',
-                font: {
-                    size: 12,
-                    color: '#ffffff'
-                }
-            },
-            edges: {
-                smooth: {
-                    type: 'continuous',
-                    forceDirection: 'none',
-                    roundness: 0
-                }
-            },
-            physics: false,
-            interaction: {
-                dragNodes: false,
-                dragView: true,
-                zoomView: true
-            }
-        };
-
-        // Create network
-        const network = new vis.Network(container, { nodes, edges }, options);
+    svgObject.addEventListener('load', function() {
+        const svgDoc = svgObject.contentDocument;
+        const svg = svgDoc.querySelector('svg');
         
-        return { network, nodes, edges, nodeMap };
+        // Mouse wheel zoom
+        svg.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY;
+            if (delta > 0) {
+                currentScale = Math.max(0.5, currentScale - 0.1);
+            } else {
+                currentScale = Math.min(2, currentScale + 0.1);
+            }
+            updateTransform(svg);
+        });
+
+        // Dragging functionality
+        svg.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            svg.style.cursor = 'grabbing';
+        });
+
+        svg.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform(svg);
+        });
+
+        svg.addEventListener('mouseup', function() {
+            isDragging = false;
+            svg.style.cursor = 'grab';
+        });
+
+        svg.addEventListener('mouseleave', function() {
+            isDragging = false;
+            svg.style.cursor = 'grab';
+        });
+
+        // Initialize cursor
+        svg.style.cursor = 'grab';
+    });
+
+    // Zoom button controls
+    zoomInBtn.addEventListener('click', function() {
+        currentScale = Math.min(2, currentScale + 0.1);
+        updateTransform(svgObject.contentDocument.querySelector('svg'));
+    });
+
+    zoomOutBtn.addEventListener('click', function() {
+        currentScale = Math.max(0.5, currentScale - 0.1);
+        updateTransform(svgObject.contentDocument.querySelector('svg'));
+    });
+
+    resetZoomBtn.addEventListener('click', function() {
+        currentScale = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform(svgObject.contentDocument.querySelector('svg'));
+    });
+
+    function updateTransform(element) {
+        element.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+        element.style.transformOrigin = 'center';
     }
 
-    function addLogEntry(message) {
-        const log = document.getElementById('operationsLog');
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.innerHTML = `${message}`;
-        log.insertBefore(entry, log.firstChild);
-    }
-    
+    // Path finding
     findPathBtn.addEventListener('click', function() {
         const start = startSelect.value;
         const end = endSelect.value;
         
         if (!start || !end) {
-            addLogEntry('⚠️ Please select both departure and destination stations.');
+            pathDetails.innerHTML = '<div class="alert alert-warning">Please select both stations</div>';
             return;
         }
-        
-        if (start === end) {
-            addLogEntry('⚠️ Departure and destination stations cannot be the same.');
-            return;
-        }
-        
-        addLogEntry(`🔍 Finding shortest path from ${start} to ${end}...`);
-        
+
         fetch('/find_path', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ start, end })
+            body: JSON.stringify({
+                start: start,
+                end: end
+            })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.error) {
-                addLogEntry(`❌ Error: ${data.error}`);
-                return;
+            if (!data || !data.path) {
+                throw new Error('Invalid path data');
             }
             
             const path = data.path;
             const totalTime = data.total_time;
             
-            // Update path details
-            let pathDetailsHtml = '<strong>Route Details:</strong><br><br>';
-            path.forEach((station, index) => {
-                if (index > 0) {
-                    pathDetailsHtml += ' → ';
-                }
-                pathDetailsHtml += `<span class="station-name">${station.station}</span>`;
-                pathDetailsHtml += `<span class="line-info">(${station.line})</span>`;
-            });
+            // Format path with arrows
+            const pathStr = path.map(p => p.station).join(' → ');
             
-            pathDetailsHtml += '<br><br><strong>Estimated Travel Time:</strong> ';
-            pathDetailsHtml += `${totalTime} minutes`;
+            let pathDetailsHtml = `
+                <div class="path-details-content">
+                    <p class="total-time">Estimated Travel Time: ${totalTime} minutes</p>
+                    <p class="route-title">Route:</p>
+                    <p class="route-path">${pathStr}</p>
+                </div>
+            `;
             
-            document.getElementById('pathDetails').innerHTML = pathDetailsHtml;
-            addLogEntry(`✅ Found path with ${path.length} stations (${totalTime} mins)`);
+            pathDetails.innerHTML = pathDetailsHtml;
             
-            // Highlight the path in the visualization
+            // Highlight path
             highlightPath(path);
         })
         .catch(error => {
-            addLogEntry(`❌ Error: Could not find path`);
             console.error('Error:', error);
+            pathDetails.innerHTML = '<div class="alert alert-danger">Could not find a path between these stations</div>';
         });
     });
-    
-    function highlightPath(path) {
-        // Reset all edges to their original colors
-        edges.forEach(edge => {
-            const edgeData = edges.get(edge.id);
-            edges.update({
-                id: edge.id,
-                color: edgeData.originalColor || edgeData.color,
-                width: 4
-            });
-        });
-        
-        // Highlight the path
-        for (let i = 0; i < path.length - 1; i++) {
-            const fromNode = nodeMap[path[i].station];
-            const toNode = nodeMap[path[i + 1].station];
-            
-            // Find the edge between these nodes
-            const edgeId = edges.forEach(edge => {
-                if ((edge.from === fromNode && edge.to === toNode) ||
-                    (edge.from === toNode && edge.to === fromNode)) {
-                    edges.update({
-                        id: edge.id,
-                        color: '#FF5252',
-                        width: 6
-                    });
+
+    function normalizeStationName(name) {
+        return name.toLowerCase()
+            .replace(/[-–—]/g, ' ')  // Convert all dash types to space
+            .replace(/\s+/g, ' ')    // Normalize spaces
+            .trim();
+    }
+
+    function findStationElement(stationData) {
+        const svgDoc = svgObject.contentDocument;
+        if (!svgDoc) return null;
+
+        const stationName = stationData.station;
+        const normalizedName = normalizeStationName(stationName);
+        const line = stationData.line;
+        console.log("Looking for station name:", stationName, "normalized:", normalizedName, "line:", line);
+
+        // Special cases for stations with distant text elements
+        const specialStationCoords = {
+            'santolan annapolis': { x: 550, y: 250, range: 30 },  // MRT-3
+            'araneta center cubao': [
+                { x: 550, y: 175, range: 30, line: 'MRT Line 3' },  // MRT-3 version
+                { x: 450, y: 175, range: 30, line: 'LRT Line 2' }   // LRT-2 version
+            ]
+        };
+
+        // Check if this is a special case station
+        if (specialStationCoords[normalizedName]) {
+            const coords = specialStationCoords[normalizedName];
+            if (Array.isArray(coords)) {
+                // For stations with multiple positions (like Araneta)
+                const coordsForLine = coords.find(c => !line || line.includes(c.line));
+                if (coordsForLine) {
+                    return findNearestEllipse(svgDoc, coordsForLine.x, coordsForLine.y, coordsForLine.range);
                 }
-            });
-        }
-        
-        // Animate the path
-        let currentIndex = 0;
-        function highlightNextStation() {
-            if (currentIndex < path.length) {
-                const nodeId = nodeMap[path[currentIndex].station];
-                const node = nodes.get(nodeId);
-                const originalSize = node.size || 20;
-                const originalColor = node.color.background;
-                
-                // Highlight effect
-                nodes.update({
-                    id: nodeId,
-                    size: originalSize * 1.5,
-                    color: { background: '#FF5252', border: node.color.border }
-                });
-                
-                // Reset after animation
-                setTimeout(() => {
-                    nodes.update({
-                        id: nodeId,
-                        size: originalSize,
-                        color: { background: originalColor, border: node.color.border }
-                    });
-                    currentIndex++;
-                    highlightNextStation();
-                }, 1000);
+            } else {
+                // For single position stations (like Santolan-Annapolis)
+                return findNearestEllipse(svgDoc, coords.x, coords.y, coords.range);
             }
         }
-        
-        highlightNextStation();
-        
-        // Focus the network on the path
-        const pathNodeIds = path.map(station => nodeMap[station.station]);
-        network.fit({
-            nodes: pathNodeIds,
-            animation: {
-                duration: 1000,
-                easingFunction: 'easeInOutQuad'
+
+        // Special cases mapping for text matching
+        const specialCases = {
+            'redemptorist aseana': 'redemptionist aseana',
+            'betty go belmonte': 'betty go belmo',
+            'araneta center cubao': 'araneta center–cubao',
+            'santolan annapolis': 'santolan–annapolis'
+        };
+
+        // First find all matching text elements
+        const allTexts = Array.from(svgDoc.querySelectorAll('text'));
+        const matchingTexts = allTexts.filter(text => {
+            const textContent = normalizeStationName(text.textContent);
+            const searchName = specialCases[normalizedName] || normalizedName;
+            return textContent === searchName || textContent.startsWith(searchName);
+        });
+
+        if (matchingTexts.length === 0) {
+            console.log("No text element found for station:", stationName);
+            return null;
+        }
+
+        // Find all potential ellipses for these texts
+        const candidates = [];
+        matchingTexts.forEach(text => {
+            const x = parseFloat(text.getAttribute('x'));
+            const y = parseFloat(text.getAttribute('y'));
+            console.log("Found matching text at coordinates:", { x, y, text: text.textContent });
+            
+            const allEllipses = Array.from(svgDoc.querySelectorAll('ellipse'));
+            allEllipses.forEach(ellipse => {
+                const cx = parseFloat(ellipse.getAttribute('cx'));
+                const cy = parseFloat(ellipse.getAttribute('cy'));
+                const distance = Math.sqrt(Math.pow(cx - x, 2) + Math.pow(cy - y, 2));
+
+                // Log all nearby ellipses for debugging
+                if (distance < 100) {
+                    console.log("Found nearby ellipse:", { 
+                        distance, 
+                        coordinates: { x: cx, y: cy },
+                        textCoords: { x, y }
+                    });
+                }
+
+                if (distance < 100) {  // Increased distance threshold
+                    candidates.push({ ellipse, distance, x: cx, y: cy });
+                }
+            });
+        });
+
+        // Sort candidates by distance
+        candidates.sort((a, b) => a.distance - b.distance);
+        const closest = candidates[0];
+
+        if (!closest) {
+            console.log("No nearby ellipse found in the correct range");
+            return null;
+        }
+
+        console.log("Selected station ellipse for:", stationName, "at coordinates:", 
+                   { x: closest.x, y: closest.y }, "distance:", closest.distance);
+        return closest.ellipse;
+    }
+
+    // Helper function to find nearest ellipse to coordinates
+    function findNearestEllipse(svgDoc, targetX, targetY, range) {
+        const allEllipses = Array.from(svgDoc.querySelectorAll('ellipse'));
+        let closest = null;
+        let minDistance = range || 30;
+
+        allEllipses.forEach(ellipse => {
+            const cx = parseFloat(ellipse.getAttribute('cx'));
+            const cy = parseFloat(ellipse.getAttribute('cy'));
+            const distance = Math.sqrt(Math.pow(cx - targetX, 2) + Math.pow(cy - targetY, 2));
+
+            if (distance < minDistance) {
+                closest = ellipse;
+                minDistance = distance;
+            }
+        });
+
+        if (closest) {
+            // Store original size if not already stored
+            if (!closest.hasAttribute('data-original-rx')) {
+                closest.setAttribute('data-original-rx', closest.getAttribute('rx'));
+                closest.setAttribute('data-original-ry', closest.getAttribute('ry'));
+            }
+        }
+
+        return closest;
+    }
+
+    function resetHighlights() {
+        const svgDoc = svgObject.contentDocument;
+        if (!svgDoc) return;
+
+        // Reset all elements to their original styles
+        svgDoc.querySelectorAll('ellipse').forEach(station => {
+            // Reset size to original stored values
+            if (station.hasAttribute('data-original-rx') && station.hasAttribute('data-original-ry')) {
+                station.setAttribute('rx', station.getAttribute('data-original-rx'));
+                station.setAttribute('ry', station.getAttribute('data-original-ry'));
+            }
+            // Clear all styles
+            station.removeAttribute('style');
+        });
+
+        // Reset all paths
+        svgDoc.querySelectorAll('path').forEach(path => {
+            const originalStyle = path.getAttribute('data-original-style');
+            if (originalStyle) {
+                path.setAttribute('style', originalStyle);
+            } else {
+                // Store original style if not already stored
+                path.setAttribute('data-original-style', path.getAttribute('style') || '');
+                // Clear highlight styles
+                path.removeAttribute('style');
             }
         });
     }
+
+    function highlightPath(path) {
+        const svgDoc = svgObject.contentDocument;
+        if (!svgDoc) return;
+
+        // Make sure to reset first
+        resetHighlights();
+
+        // Sequential highlighting with animation
+        path.forEach((station, index) => {
+            setTimeout(() => {
+                const stationElement = findStationElement(station);
+                if (stationElement) {
+                    stationElement.style.fill = '#00FFFF';
+                    stationElement.style.stroke = '#0000FF';
+                    stationElement.style.strokeWidth = '3';
+                    
+                    const originalRx = parseFloat(stationElement.getAttribute('data-original-rx') || '6');
+                    const originalRy = parseFloat(stationElement.getAttribute('data-original-ry') || '6');
+                    stationElement.setAttribute('rx', (originalRx * 1.5).toString());
+                    stationElement.setAttribute('ry', (originalRy * 1.5).toString());
+
+                    if (index < path.length - 1) {
+                        const nextStation = path[index + 1];
+                        highlightConnection(station, nextStation);
+                    }
+                }
+            }, index * 800);
+        });
+    }
+
+    function findConnectionPath(station1, station2) {
+        const svgDoc = svgObject.contentDocument;
+        if (!svgDoc) return null;
+
+        const name1 = station1.station;
+        const name2 = station2.station;
+        console.log("Looking for path between stations:", name1, name2);
+
+        // Find the text elements for both stations
+        const allTexts = Array.from(svgDoc.querySelectorAll('text'));
+        const text1 = allTexts.find(text => text.textContent.trim() === name1);
+        const text2 = allTexts.find(text => text.textContent.trim() === name2);
+
+        if (!text1 || !text2) {
+            console.log("Could not find text elements for stations");
+            return null;
+        }
+
+        // Get coordinates of both stations
+        const group1 = text1.parentElement;
+        const group2 = text2.parentElement;
+        const ellipse1 = group1?.querySelector('ellipse');
+        const ellipse2 = group2?.querySelector('ellipse');
+
+        if (!ellipse1 || !ellipse2) {
+            console.log("Could not find ellipses for stations");
+            return null;
+        }
+
+        // Find path that connects these stations
+        const paths = Array.from(svgDoc.querySelectorAll('path'));
+        console.log("Total paths found:", paths.length);
+
+        // Look for a path that has style matching draw.io path style
+        for (const path of paths) {
+            const style = path.getAttribute('style') || '';
+            if (style.includes('strokeColor=#FFA500') && style.includes('strokeWidth=7')) {
+                // Check if this path connects our stations
+                const d = path.getAttribute('d');
+                const cx1 = ellipse1.getAttribute('cx');
+                const cy1 = ellipse1.getAttribute('cy');
+                const cx2 = ellipse2.getAttribute('cx');
+                const cy2 = ellipse2.getAttribute('cy');
+
+                if (d && d.includes(`${cx1},${cy1}`) && d.includes(`${cx2},${cy2}`)) {
+                    console.log("Found connecting path");
+                    return path;
+                }
+            }
+        }
+
+        console.log("No path found between", name1, "and", name2);
+        return null;
+    }
+
+    function highlightConnection(station1, station2) {
+        const path = findConnectionPath(station1, station2);
+        if (path) {
+            // Bright blue highlight for paths too
+            path.style.stroke = '#00FFFF';
+            path.style.strokeWidth = '10';
+        }
+    }
+
+    // Initialize
+    populateDropdowns();
 });
 </script>
 {% endblock %}

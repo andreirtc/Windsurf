@@ -67,6 +67,244 @@ body {
     margin: 1rem 0;
 }
 
+/* Network Visualization Styles */
+.network-container {
+    width: 100%;
+    height: 600px;
+    background: #000000;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.railway-map {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000000;
+}
+
+/* Line Colors */
+.line-color.lrt1 {
+    background-color: #FF0000;  /* Red for LRT1 */
+}
+
+.line-color.lrt2 {
+    background-color: #800080;  /* Purple for LRT2 */
+}
+
+.line-color.mrt3 {
+    background-color: #FFA500;  /* Orange for MRT3 */
+}
+
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 1000;
+}
+
+.zoom-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zoom-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced highlighting effects */
+.glow-effect {
+    animation: glowPulse 2s infinite;
+}
+
+.highlighted-station {
+    fill: #FFFF00 !important;
+    r: 15 !important;
+    box-shadow: 0 0 20px #FFFF00,
+               0 0 40px #FFFF00,
+               0 0 60px #FFFF00,
+               0 0 80px #FFFF00,
+               0 0 100px #FFFF00 !important;
+}
+
+.highlighted-path {
+    stroke: #FFFF00 !important;
+    stroke-width: 10 !important;
+    box-shadow: 0 0 20px #FFFF00,
+               0 0 40px #FFFF00,
+               0 0 60px #FFFF00 !important;
+}
+
+@keyframes glowPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+/* Add neon glow effect */
+.neon-glow {
+    -webkit-animation: neon 1.5s ease-in-out infinite alternate;
+    -moz-animation: neon 1.5s ease-in-out infinite alternate;
+    animation: neon 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes neon {
+    from {
+        box-shadow: 0 0 10px #FFFF00,
+                   0 0 20px #FFFF00,
+                   0 0 30px #FFFF00;
+    }
+    to {
+        box-shadow: 0 0 20px #FFFF00,
+                   0 0 40px #FFFF00,
+                   0 0 60px #FFFF00;
+    }
+}
+
+/* SVG Station styles */
+circle {
+    transition: all 0.3s ease;
+}
+
+path {
+    transition: all 0.3s ease;
+}
+
+/* Station and Path Animations */
+@keyframes stationPulse {
+    0% { r: 6px; }
+    50% { r: 12px; }
+    100% { r: 6px; }
+}
+
+@keyframes pathDraw {
+    from {
+        stroke-dashoffset: 1000;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.station-highlight {
+    animation: stationPulse 1s ease-in-out infinite;
+    fill: #FFFF00 !important;
+}
+
+.path-highlight {
+    stroke: #FFFF00 !important;
+    stroke-width: 6px !important;
+    stroke-dasharray: 1000;
+    animation: pathDraw 2s linear forwards;
+}
+
+/* Hover effects */
+circle:hover {
+    r: 12px;
+    fill: #FFFF00;
+    transition: all 0.3s ease;
+}
+
+/* Selected station */
+.selected-station {
+    fill: #FFFF00 !important;
+    r: 12px;
+}
+
+/* Alert Messages */
+.alert {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.alert-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.alert-danger {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+/* SVG Animations */
+.station-dot {
+    transition: r 0.3s, fill 0.3s;
+}
+
+.station-dot:hover {
+    r: 8;
+}
+
+.railway-line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawLine 2s forwards;
+}
+
+@keyframes drawLine {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.station-label {
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+    animation-delay: 2s;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Path Details Styles */
+.path-details-content {
+    color: white;
+    font-size: 14px;
+}
+
+.total-time {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #9b4dca;
+}
+
+.route-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.route-path {
+    font-size: 16px;
+    line-height: 1.5;
+    word-spacing: 5px;
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     .container {
@@ -194,17 +432,14 @@ body {
     width: 8px;
     height: 8px;
 }
-
 ::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb {
     background: var(--primary-color);
     border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
     background: #8a44b8;
 }
