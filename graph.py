@@ -19,19 +19,19 @@ class Graph:
             "Abad Santos", "Blumentritt", "Tayuman", "Bambang", "Doroteo Jose",
             "Carriedo", "Central Terminal", "United Nations", "Pedro Gil", "Quirino",
             "Vito Cruz", "Gil Puyat", "Libertad", "EDSA", "Baclaran",
-            "Redemptorist - Aseana", "MIA", "Asia World", "Ninoy Aquino Ave.", "Dr. Santos"
+            "Redemptionist - Aseana", "MIA", "Asia World", "Ninoy Aquino Ave.", "Dr. Santos"
         ]
         
         # LRT Line 2 (Purple Line)
         lrt2_stations = [
             "Recto", "Legarda", "Pureza", "V. Mapa", "J. Ruiz", "Gilmore",
-            "Betty Go-Belmonte", "Araneta Center-Cubao", "Anonas", "Katipunan",
+            "Betty Go-Belmonte", "Araneta Center-Cubao (LRT-2)", "Anonas", "Katipunan",
             "Santolan", "Marikina-Pasig", "Antipolo"
         ]
         
         # MRT Line 3 (Yellow Line)
         mrt3_stations = [
-            "North Avenue", "Quezon Avenue", "GMA Kamuning", "Araneta Center-Cubao",
+            "North Avenue", "Quezon Avenue", "GMA Kamuning", "Araneta Center-Cubao (MRT-3)",
             "Santolan-Annapolis", "Ortigas", "Shaw Boulevard", "Boni", "Guadalupe",
             "Buendia", "Ayala", "Magallanes", "Taft Avenue"
         ]
@@ -56,7 +56,7 @@ class Graph:
         
         # Connect interchange stations
         self.add_edge("Doroteo Jose", "Recto", 5)  # LRT1-LRT2 connection
-        self.add_edge("Araneta Center-Cubao", "Araneta Center-Cubao", 5)  # LRT2-MRT3 connection
+        self.add_edge("Araneta Center-Cubao (LRT-2)", "Araneta Center-Cubao (MRT-3)", 5)  # LRT2-MRT3 connection
         self.add_edge("EDSA", "Taft Avenue", 5)  # LRT1-MRT3 connection
         
     def _connect_line_stations(self, line, stations):

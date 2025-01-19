@@ -288,8 +288,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetZoomBtn = document.getElementById('resetZoom');
     let currentScale = 1;
     let isDragging = false;
-    let startX, startY, translateX = 0, translateY = 0;
-    
+    let translateX = 0;
+    let translateY = 0;
+    let initialDistance = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let lastTap = 0;
+
     // Initialize stations data with correct order
     const stations = {
         'LRT1': [
@@ -313,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Libertad',
             'EDSA',
             'Baclaran',
-            'Redemptorist - Aseana',
+            'Redemptionist - Aseana',
             'MIA',
             'Asia World',
             'Ninoy Aquino Ave.',
@@ -327,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'J. Ruiz',
             'Gilmore',
             'Betty Go-Belmonte',
-            'Araneta Center-Cubao',
+            'Araneta Center-Cubao (LRT-2)',
             'Anonas',
             'Katipunan',
             'Santolan',
@@ -338,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'North Avenue',
             'Quezon Avenue',
             'GMA Kamuning',
-            'Araneta Center-Cubao',
+            'Araneta Center-Cubao (MRT-3)',
             'Santolan-Annapolis',
             'Ortigas',
             'Shaw Boulevard',
@@ -408,6 +413,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Initialize cursor
         svg.style.cursor = 'grab';
+
+        // Touch event handlers
+        svg.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                // Single touch - start drag
+                touchStartX = e.touches[0].clientX - translateX;
+                touchStartY = e.touches[0].clientY - translateY;
+                isDragging = true;
+            } else if (e.touches.length === 2) {
+                // Double touch - start pinch zoom
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+            e.preventDefault();
+        });
+
+        svg.addEventListener('touchmove', function(e) {
+            if (isDragging && e.touches.length === 1) {
+                // Single touch - drag
+                translateX = e.touches[0].clientX - touchStartX;
+                translateY = e.touches[0].clientY - touchStartY;
+                updateTransform(svg);
+            } else if (e.touches.length === 2) {
+                // Double touch - pinch zoom
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                
+                if (initialDistance > 0) {
+                    const scaleDiff = currentDistance / initialDistance;
+                    const newScale = Math.min(Math.max(currentScale * scaleDiff, 0.5), 2);
+                    if (newScale !== currentScale) {
+                        currentScale = newScale;
+                        updateTransform(svg);
+                    }
+                }
+            }
+            e.preventDefault();
+        });
+
+        svg.addEventListener('touchend', function(e) {
+            isDragging = false;
+            initialDistance = 0;
+            e.preventDefault();
+        });
+
+        // Double tap to reset
+        svg.addEventListener('touchend', function(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 300 && tapLength > 0) {
+                currentScale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform(svg);
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
     });
 
     // Zoom button controls
@@ -443,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        fetch('/find_path', {
+        fetch('http://127.0.0.1:5001/find_path', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -490,8 +557,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function normalizeStationName(name) {
+        if (!name) return '';
         return name.toLowerCase()
-            .replace(/[-–—]/g, ' ')  // Convert all dash types to space
+            .replace(/[—–-]/g, ' ')  // Convert all types of dashes to space
             .replace(/\s+/g, ' ')    // Normalize spaces
             .trim();
     }
@@ -499,97 +567,136 @@ document.addEventListener('DOMContentLoaded', function() {
     function findStationElement(stationData) {
         const svgDoc = svgObject.contentDocument;
         if (!svgDoc) return null;
+        if (!stationData) return null;
 
-        const stationName = stationData.station;
-        const normalizedName = normalizeStationName(stationName);
+        const stationName = stationData.name || stationData.station;  // Try both properties
         const line = stationData.line;
+        const normalizedName = normalizeStationName(stationName);
+
         console.log("Looking for station name:", stationName, "normalized:", normalizedName, "line:", line);
 
         // Special cases for stations with distant text elements
         const specialStationCoords = {
-            'santolan annapolis': { x: 550, y: 250, range: 30 },  // MRT-3
-            'araneta center cubao': [
-                { x: 550, y: 175, range: 30, line: 'MRT Line 3' },  // MRT-3 version
-                { x: 450, y: 175, range: 30, line: 'LRT Line 2' }   // LRT-2 version
-            ]
+            'santolan annapolis': { x: 418, y: 253.5, range: 15, color: '#ffa500', line: 'MRT Line 3 (Yellow)' },
+            'araneta center cubao (mrt 3)': { x: 418, y: 224.75, range: 15, line: 'MRT Line 3 (Yellow)', color: '#ffa500' },
+            'araneta center cubao (lrt 2)': { x: 457.5, y: 211, range: 15, line: 'LRT Line 2 (Purple)', color: '#800080' },
+            'redemptionist aseana': { x: 97.5, y: 476.5, range: 15, color: '#ff0000', line: 'LRT Line 1 (Green)' }
+        };
+
+        // For other stations, try to find by text
+        const specialCases = {
+            'redemptionist aseana': 'Redemptionist - Aseana',
+            'redemptorist aseana': 'Redemptionist - Aseana',
+            'betty go belmonte': 'Betty Go Belmo...',
+            'araneta center cubao (mrt 3)': 'Araneta Center-Cubao',
+            'araneta center cubao (lrt 2)': 'Araneta Center-Cubao',
+            'santolan annapolis': 'Santolan-Annapolis'
         };
 
         // Check if this is a special case station
         if (specialStationCoords[normalizedName]) {
             const coords = specialStationCoords[normalizedName];
+            const allEllipses = Array.from(svgDoc.querySelectorAll('ellipse'));
+            
             if (Array.isArray(coords)) {
                 // For stations with multiple positions (like Araneta)
-                const coordsForLine = coords.find(c => !line || line.includes(c.line));
-                if (coordsForLine) {
-                    return findNearestEllipse(svgDoc, coordsForLine.x, coordsForLine.y, coordsForLine.range);
+                // First, find the correct coordinates for this line
+                const coordsForLine = coords.find(c => c.line === line);
+                if (!coordsForLine) {
+                    console.log("No coordinates found for line:", line);
+                    return null;
                 }
-            } else {
-                // For single position stations (like Santolan-Annapolis)
-                return findNearestEllipse(svgDoc, coords.x, coords.y, coords.range);
-            }
-        }
 
-        // Special cases mapping for text matching
-        const specialCases = {
-            'redemptorist aseana': 'redemptionist aseana',
-            'betty go belmonte': 'betty go belmo',
-            'araneta center cubao': 'araneta center–cubao',
-            'santolan annapolis': 'santolan–annapolis'
-        };
+                // Then look for an ellipse at those coordinates with the right color
+                for (const ellipse of allEllipses) {
+                    const cx = parseFloat(ellipse.getAttribute('cx'));
+                    const cy = parseFloat(ellipse.getAttribute('cy'));
+                    const fill = ellipse.getAttribute('fill');
+                    const distance = Math.sqrt(Math.pow(cx - coordsForLine.x, 2) + Math.pow(cy - coordsForLine.y, 2));
+                    
+                    if (distance < coordsForLine.range && fill === coordsForLine.color) {
+                        console.log("Found matching ellipse for", stationName, "at", cx, cy, "with fill", fill, "for line", coordsForLine.line);
+                        return ellipse;
+                    }
+                }
+                console.log("No matching ellipse found for", stationName, "on line", line);
+            } else {
+                // For single position stations
+                // Check if the line matches
+                if (coords.line !== line) {
+                    console.log("Line mismatch for", stationName, "expected", coords.line, "got", line);
+                    return null;
+                }
+
+                for (const ellipse of allEllipses) {
+                    const cx = parseFloat(ellipse.getAttribute('cx'));
+                    const cy = parseFloat(ellipse.getAttribute('cy'));
+                    const fill = ellipse.getAttribute('fill');
+                    const distance = Math.sqrt(Math.pow(cx - coords.x, 2) + Math.pow(cy - coords.y, 2));
+                    
+                    if (distance < coords.range && fill === coords.color) {
+                        console.log("Found matching ellipse for", stationName, "at", cx, cy, "with fill", fill, "for line", coords.line);
+                        return ellipse;
+                    }
+                }
+            }
+            console.log("No matching ellipse found for", stationName, "on line", line);
+            return null;
+        }
 
         // First find all matching text elements
         const allTexts = Array.from(svgDoc.querySelectorAll('text'));
         const matchingTexts = allTexts.filter(text => {
-            const textContent = normalizeStationName(text.textContent);
-            const searchName = specialCases[normalizedName] || normalizedName;
-            return textContent === searchName || textContent.startsWith(searchName);
+            const content = text.textContent.trim().toLowerCase();
+            const searchName = specialCases[normalizedName] ? 
+                             specialCases[normalizedName].toLowerCase() : 
+                             stationName.toLowerCase();
+            return content === searchName;
         });
 
-        if (matchingTexts.length === 0) {
-            console.log("No text element found for station:", stationName);
-            return null;
-        }
-
-        // Find all potential ellipses for these texts
-        const candidates = [];
-        matchingTexts.forEach(text => {
-            const x = parseFloat(text.getAttribute('x'));
-            const y = parseFloat(text.getAttribute('y'));
-            console.log("Found matching text at coordinates:", { x, y, text: text.textContent });
+        if (matchingTexts.length > 0) {
+            const nearestEllipses = [];
             
-            const allEllipses = Array.from(svgDoc.querySelectorAll('ellipse'));
-            allEllipses.forEach(ellipse => {
-                const cx = parseFloat(ellipse.getAttribute('cx'));
-                const cy = parseFloat(ellipse.getAttribute('cy'));
-                const distance = Math.sqrt(Math.pow(cx - x, 2) + Math.pow(cy - y, 2));
-
-                // Log all nearby ellipses for debugging
-                if (distance < 100) {
-                    console.log("Found nearby ellipse:", { 
-                        distance, 
-                        coordinates: { x: cx, y: cy },
-                        textCoords: { x, y }
-                    });
+            // Find all nearby ellipses for each matching text
+            for (const text of matchingTexts) {
+                const textX = parseFloat(text.getAttribute('x'));
+                const textY = parseFloat(text.getAttribute('y'));
+                
+                const allEllipses = Array.from(svgDoc.querySelectorAll('ellipse'));
+                for (const ellipse of allEllipses) {
+                    const cx = parseFloat(ellipse.getAttribute('cx'));
+                    const cy = parseFloat(ellipse.getAttribute('cy'));
+                    const fill = ellipse.getAttribute('fill');
+                    
+                    const distance = Math.sqrt(Math.pow(cx - textX, 2) + Math.pow(cy - textY, 2));
+                    
+                    // Check if this is a special station that needs color verification
+                    if (specialStationCoords[normalizedName]) {
+                        const specialStation = specialStationCoords[normalizedName];
+                        if (Array.isArray(specialStation)) {
+                            // For stations with multiple positions (like Araneta)
+                            const matchingCoord = specialStation.find(c => 
+                                (!line || c.line === line) && 
+                                fill === c.color
+                            );
+                            if (matchingCoord && distance < matchingCoord.range) {
+                                nearestEllipses.push({ ellipse, distance });
+                            }
+                        } else if (distance < specialStation.range && fill === specialStation.color) {
+                            nearestEllipses.push({ ellipse, distance });
+                        }
+                    } else if (distance < 50) { // Default range for non-special stations
+                        nearestEllipses.push({ ellipse, distance });
+                    }
                 }
-
-                if (distance < 100) {  // Increased distance threshold
-                    candidates.push({ ellipse, distance, x: cx, y: cy });
-                }
-            });
-        });
-
-        // Sort candidates by distance
-        candidates.sort((a, b) => a.distance - b.distance);
-        const closest = candidates[0];
-
-        if (!closest) {
-            console.log("No nearby ellipse found in the correct range");
-            return null;
+            }
+            
+            // Return the nearest ellipse if any were found
+            if (nearestEllipses.length > 0) {
+                nearestEllipses.sort((a, b) => a.distance - b.distance);
+                return nearestEllipses[0].ellipse;
+            }
         }
-
-        console.log("Selected station ellipse for:", stationName, "at coordinates:", 
-                   { x: closest.x, y: closest.y }, "distance:", closest.distance);
-        return closest.ellipse;
     }
 
     // Helper function to find nearest ellipse to coordinates
@@ -683,8 +790,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const svgDoc = svgObject.contentDocument;
         if (!svgDoc) return null;
 
-        const name1 = station1.station;
-        const name2 = station2.station;
+        const name1 = station1.name;
+        const name2 = station2.name;
         console.log("Looking for path between stations:", name1, name2);
 
         // Find the text elements for both stations
