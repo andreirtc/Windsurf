@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        fetch('http://127.0.0.1:5001/find_path', {
+        fetch('/find_path', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -601,7 +601,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (Array.isArray(coords)) {
                 // For stations with multiple positions (like Araneta)
                 // First, find the correct coordinates for this line
-                const coordsForLine = coords.find(c => c.line === line);
+                const coordsForLine = coords.find(c => 
+                    (!line || c.line === line) && 
+                    fill === c.color
+                );
                 if (!coordsForLine) {
                     console.log("No coordinates found for line:", line);
                     return null;

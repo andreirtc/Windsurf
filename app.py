@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for, g
 from flask_login import LoginManager, login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_cors import CORS
 from models import db, User, Comment
 from stack import LinkedListStack, shunting_yard_step_by_step
 from queue_lab import Queue, Deque
@@ -9,6 +10,7 @@ from binary_tree import BinaryTree
 from graph import Graph
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": ["https://windsurf.onrender.com", "http://localhost:5000", "http://127.0.0.1:5000", "http://127.0.0.1:5001"]}})
 app.config['SECRET_KEY'] = 'windsurf_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///windsurf.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
