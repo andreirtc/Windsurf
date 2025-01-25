@@ -1,0 +1,317 @@
+{% extends "sorting/base_sorting.html" %}
+
+{% block breadcrumb_name %}Merge Sort{% endblock %}
+{% block algorithm_name %}Merge Sort{% endblock %}
+{% block algorithm_id %}merge{% endblock %}
+
+{% block algorithm_description %}
+<p>Merge Sort is a divide-and-conquer algorithm that recursively breaks down a problem into smaller, more manageable subproblems until they become simple enough to solve directly.</p>
+
+<h4>Algorithm Steps:</h4>
+<ol>
+    <li>Divide the unsorted array into two halves</li>
+    <li>Recursively sort the two halves</li>
+    <li>Merge the sorted halves:
+        <ul>
+            <li>Create a temporary array for merging</li>
+            <li>Compare elements from both halves</li>
+            <li>Place the smaller element in the temporary array</li>
+            <li>Copy remaining elements from non-empty half</li>
+        </ul>
+    </li>
+    <li>Continue until the entire array is sorted</li>
+</ol>
+
+<h4>Key Features:</h4>
+<ul>
+    <li>Stable sorting algorithm</li>
+    <li>Not in-place (requires extra space)</li>
+    <li>Predictable performance (always O(n log n))</li>
+    <li>Parallelizable (can be efficiently parallelized)</li>
+    <li>External sorting (good for sorting data that doesn't fit in memory)</li>
+</ul>
+{% endblock %}
+
+{% block complexity %}
+    <td>Ω(n log n)</td>
+    <td>θ(n log n)</td>
+    <td>O(n log n)</td>
+    <td>O(n)</td>
+{% endblock %}
+
+{% block algorithm_specific_js %}
+<script>
+// Set custom colors for Merge Sort
+setCustomColors({
+    default: '#64748B',     // Slate for unsorted
+    comparing: '#06B6D4',   // Cyan for comparing
+    swapping: '#F472B6',    // Pink for swapping
+    sorted: '#2DD4BF'       // Teal for sorted
+});
+
+async function visualizeSort() {
+    if (!isSorting) {
+        try {
+            isSorting = true;
+            isPaused = false;
+            currentSortingStep = 0;
+            disableControls(true);
+            
+            const steps = [];
+            const arrayCopy = [...array];
+            const sortedRanges = new Set(); // Keep track of sorted ranges
+            
+            // Initial state - nothing is sorted
+            steps.push({
+                array: [...arrayCopy],
+                sortedRanges: []
+            });
+            
+            function merge(start, mid, end) {
+                const leftArray = arrayCopy.slice(start, mid + 1);
+                const rightArray = arrayCopy.slice(mid + 1, end + 1);
+                
+                let i = 0;
+                let j = 0;
+                let k = start;
+                
+                // Show subarrays being merged
+                steps.push({
+                    array: [...arrayCopy],
+                    leftSubarray: {start: start, end: mid},
+                    rightSubarray: {start: mid + 1, end: end},
+                    comparing: [-1, -1],
+                    sortedRanges: Array.from(sortedRanges)
+                });
+                
+                while (i < leftArray.length && j < rightArray.length) {
+                    // Show comparison
+                    steps.push({
+                        array: [...arrayCopy],
+                        leftSubarray: {start: start, end: mid},
+                        rightSubarray: {start: mid + 1, end: end},
+                        comparing: [start + i, mid + 1 + j],
+                        sortedRanges: Array.from(sortedRanges)
+                    });
+                    
+                    if (leftArray[i] <= rightArray[j]) {
+                        arrayCopy[k] = leftArray[i];
+                        // Show placement from left array
+                        steps.push({
+                            array: [...arrayCopy],
+                            leftSubarray: {start: start, end: mid},
+                            rightSubarray: {start: mid + 1, end: end},
+                            placed: k,
+                            sortedRanges: Array.from(sortedRanges)
+                        });
+                        i++;
+                    } else {
+                        arrayCopy[k] = rightArray[j];
+                        // Show placement from right array
+                        steps.push({
+                            array: [...arrayCopy],
+                            leftSubarray: {start: start, end: mid},
+                            rightSubarray: {start: mid + 1, end: end},
+                            placed: k,
+                            sortedRanges: Array.from(sortedRanges)
+                        });
+                        j++;
+                    }
+                    k++;
+                }
+                
+                // Copy remaining elements from left array
+                while (i < leftArray.length) {
+                    arrayCopy[k] = leftArray[i];
+                    steps.push({
+                        array: [...arrayCopy],
+                        leftSubarray: {start: start, end: mid},
+                        rightSubarray: {start: mid + 1, end: end},
+                        placed: k,
+                        sortedRanges: Array.from(sortedRanges)
+                    });
+                    i++;
+                    k++;
+                }
+                
+                // Copy remaining elements from right array
+                while (j < rightArray.length) {
+                    arrayCopy[k] = rightArray[j];
+                    steps.push({
+                        array: [...arrayCopy],
+                        leftSubarray: {start: start, end: mid},
+                        rightSubarray: {start: mid + 1, end: end},
+                        placed: k,
+                        sortedRanges: Array.from(sortedRanges)
+                    });
+                    j++;
+                    k++;
+                }
+                
+                // Add the merged range to sortedRanges
+                sortedRanges.add([start, end]);
+                
+                // Show merged subarray
+                steps.push({
+                    array: [...arrayCopy],
+                    mergedSubarray: {start: start, end: end},
+                    sortedRanges: Array.from(sortedRanges)
+                });
+            }
+            
+            function mergeSort(start, end) {
+                if (start < end) {
+                    const mid = Math.floor((start + end) / 2);
+                    
+                    // Show division of array
+                    steps.push({
+                        array: [...arrayCopy],
+                        dividing: {start: start, end: end, mid: mid},
+                        sortedRanges: Array.from(sortedRanges)
+                    });
+                    
+                    mergeSort(start, mid);
+                    mergeSort(mid + 1, end);
+                    merge(start, mid, end);
+                } else {
+                    // Single element is sorted
+                    sortedRanges.add([start, start]);
+                    steps.push({
+                        array: [...arrayCopy],
+                        sortedRanges: Array.from(sortedRanges)
+                    });
+                }
+            }
+            
+            mergeSort(0, arrayCopy.length - 1);
+            
+            // Show final sorted array
+            steps.push({
+                array: [...arrayCopy],
+                completed: true,
+                sortedRanges: [[0, arrayCopy.length - 1]]
+            });
+            
+            sortingSteps = steps;
+            updateTimeline();
+            await displayStep(sortingSteps[0]);
+            
+        } catch (error) {
+            console.error('Error during sorting:', error);
+            alert('An error occurred during sorting. Please try again.');
+            isSorting = false;
+            disableControls(false);
+        }
+    }
+}
+
+function displayStep(step) {
+    if (!step) return;
+    
+    const container = document.querySelector('.array-container');
+    container.innerHTML = '';
+    
+    const maxValue = Math.max(...step.array);
+    const containerHeight = container.clientHeight - 60;
+    const barWidth = 32;
+    const totalWidth = step.array.length * barWidth;
+    const startX = (container.clientWidth - totalWidth) / 2;
+    
+    step.array.forEach((value, index) => {
+        const barContainer = document.createElement('div');
+        barContainer.className = 'bar-container';
+        barContainer.style.left = `${startX + index * barWidth}px`;
+        
+        const bar = document.createElement('div');
+        bar.className = 'array-bar';
+        
+        // Color coding based on the current state
+        if (step.comparing && step.comparing.includes(index)) {
+            bar.style.backgroundColor = '#06B6D4'; // Cyan for comparing
+        } else if (step.placed === index) {
+            bar.style.backgroundColor = '#06B6D4'; // Cyan for just placed
+        } else if (step.leftSubarray && index >= step.leftSubarray.start && index <= step.leftSubarray.end) {
+            bar.style.backgroundColor = '#64748B'; // Slate for left subarray
+        } else if (step.rightSubarray && index >= step.rightSubarray.start && index <= step.rightSubarray.end) {
+            bar.style.backgroundColor = '#64748B'; // Slate for right subarray
+        } else {
+            // Check if the current index is in any sorted range
+            let isSorted = false;
+            if (step.sortedRanges) {
+                for (const [start, end] of step.sortedRanges) {
+                    if (index >= start && index <= end) {
+                        isSorted = true;
+                        break;
+                    }
+                }
+            }
+            if (isSorted || step.completed) {
+                bar.style.backgroundColor = '#2DD4BF'; // Teal for sorted ranges
+            }
+        }
+        
+        const height = Math.max(20, (value / maxValue) * containerHeight);
+        bar.style.height = `${height}px`;
+        
+        const valueLabel = document.createElement('div');
+        valueLabel.className = 'bar-value';
+        valueLabel.textContent = value;
+        
+        const indexLabel = document.createElement('div');
+        indexLabel.className = 'bar-index';
+        indexLabel.textContent = index;
+        
+        bar.appendChild(valueLabel);
+        barContainer.appendChild(bar);
+        barContainer.appendChild(indexLabel);
+        container.appendChild(barContainer);
+    });
+}
+</script>
+{% endblock %}
+
+{% block how_it_works %}
+<div class="how-it-works">
+    <h3>How Merge Sort Works</h3>
+    <p>Merge Sort is a divide-and-conquer algorithm that recursively breaks down a problem into smaller, more manageable subproblems until they become simple enough to solve directly.</p>
+    
+    <div class="steps">
+        <h4>Algorithm Steps:</h4>
+        <ol>
+            <li>Divide the unsorted array into two halves</li>
+            <li>Recursively sort the two halves</li>
+            <li>Merge the sorted halves to produce a single sorted array:
+                <ul>
+                    <li>Create a temporary array to store merged result</li>
+                    <li>Compare elements from both halves</li>
+                    <li>Place the smaller element in the temporary array</li>
+                    <li>Copy remaining elements from non-empty half</li>
+                </ul>
+            </li>
+            <li>Continue this process until the entire array is sorted</li>
+        </ol>
+    </div>
+    
+    <div class="complexity">
+        <h4>Time Complexity:</h4>
+        <ul>
+            <li>Best Case: O(n log n)</li>
+            <li>Average Case: O(n log n)</li>
+            <li>Worst Case: O(n log n)</li>
+        </ul>
+        
+        <h4>Space Complexity:</h4>
+        <ul>
+            <li>O(n) - Requires additional space proportional to input size</li>
+        </ul>
+        
+        <h4>Properties:</h4>
+        <ul>
+            <li>Stable: Yes</li>
+            <li>In-place: No</li>
+            <li>Adaptive: No</li>
+            <li>Parallelizable: Yes (can be efficiently parallelized)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

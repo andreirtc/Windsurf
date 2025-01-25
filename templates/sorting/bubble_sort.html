@@ -1,0 +1,25 @@
+{% extends "sorting/base_sorting.html" %}
+
+{% block algorithm_name %}Bubble Sort{% endblock %}
+{% block breadcrumb_name %}Bubble Sort{% endblock %}
+
+{% block algorithm_id %}bubble{% endblock %}
+
+{% block algorithm_description %}
+<p>Bubble Sort is a simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order. The pass through the list is repeated until no more swaps are needed.</p>
+
+<p>Key characteristics:</p>
+<ul>
+    <li>Simple implementation</li>
+    <li>Poor performance on large lists</li>
+    <li>Stable sort (maintains relative order of equal elements)</li>
+    <li>In-place algorithm (requires constant O(1) additional memory space)</li>
+</ul>
+{% endblock %}
+
+{% block complexity %}
+<td>O(n)</td>
+<td>O(n²)</td>
+<td>O(n²)</td>
+<td>O(1)</td>
+{% endblock %}

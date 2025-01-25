@@ -4,7 +4,7 @@ class Node:
         self.next = None
 
 
-class LinkedListStack:
+class Stack:
     def __init__(self):
         self.top = None
 
@@ -52,7 +52,7 @@ def precedence(op):
 
 
 def shunting_yard_step_by_step(infix_expression):
-    stack = LinkedListStack()
+    stack = Stack()
     output = []
     steps = []
 

@@ -1,0 +1,273 @@
+{% extends "sorting/base_sorting.html" %}
+
+{% block breadcrumb_name %}Quick Sort{% endblock %}
+{% block algorithm_name %}Quick Sort{% endblock %}
+{% block algorithm_id %}quick{% endblock %}
+
+{% block algorithm_description %}
+<p>Quick Sort is a highly efficient, comparison-based algorithm that uses a divide-and-conquer strategy. It works by selecting a 'pivot' element and partitioning the array around it.</p>
+
+<h4>Algorithm Steps:</h4>
+<ol>
+    <li>Choose a pivot element from the array</li>
+    <li>Partition the array around the pivot:
+        <ul>
+            <li>Move elements smaller than pivot to the left</li>
+            <li>Move elements larger than pivot to the right</li>
+            <li>Place pivot in its final position</li>
+        </ul>
+    </li>
+    <li>Recursively sort the sub-array before pivot</li>
+    <li>Recursively sort the sub-array after pivot</li>
+</ol>
+
+<h4>Key Features:</h4>
+<ul>
+    <li>Highly efficient for large datasets</li>
+    <li>In-place sorting (requires small additional space)</li>
+    <li>Not stable (equal elements may change order)</li>
+    <li>Partition-based strategy</li>
+    <li>Performance depends heavily on pivot selection</li>
+</ul>
+{% endblock %}
+
+{% block complexity %}
+    <td>Ω(n log n)</td>
+    <td>θ(n log n)</td>
+    <td>O(n²)</td>
+    <td>O(log n)</td>
+{% endblock %}
+
+{% block algorithm_specific_js %}
+<script>
+// Set custom colors for Quick Sort
+setCustomColors({
+    default: '#475569',    // Slate for unsorted
+    comparing: '#0EA5E9',  // Sky Blue for comparing
+    swapping: '#A855F7',   // Purple for swapping
+    sorted: '#F97316',     // Orange for sorted
+    pivot: '#DC2626'       // Red for pivot
+});
+
+async function visualizeSort() {
+    if (!isSorting) {
+        try {
+            isSorting = true;
+            isPaused = false;
+            currentSortingStep = 0;
+            disableControls(true);
+            
+            const steps = [];
+            const arrayCopy = [...array];
+            const sortedIndices = new Set();
+            
+            // Initial state - nothing is sorted
+            steps.push({
+                array: [...arrayCopy],
+                sortedIndices: Array.from(sortedIndices)
+            });
+            
+            function partition(low, high) {
+                const pivot = arrayCopy[high];
+                
+                // Show pivot selection
+                steps.push({
+                    array: [...arrayCopy],
+                    pivot: high,
+                    partitionRange: {start: low, end: high},
+                    sortedIndices: Array.from(sortedIndices)
+                });
+                
+                let i = low - 1;
+                
+                for (let j = low; j < high; j++) {
+                    // Show comparison with pivot
+                    steps.push({
+                        array: [...arrayCopy],
+                        pivot: high,
+                        comparing: j,
+                        partitionRange: {start: low, end: high},
+                        lessThanPivot: i,
+                        sortedIndices: Array.from(sortedIndices)
+                    });
+                    
+                    if (arrayCopy[j] < pivot) {
+                        i++;
+                        // Swap elements
+                        if (i !== j) {
+                            [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+                            steps.push({
+                                array: [...arrayCopy],
+                                pivot: high,
+                                swapped: [i, j],
+                                partitionRange: {start: low, end: high},
+                                lessThanPivot: i,
+                                sortedIndices: Array.from(sortedIndices)
+                            });
+                        }
+                    }
+                }
+                
+                // Place pivot in its correct position
+                [arrayCopy[i + 1], arrayCopy[high]] = [arrayCopy[high], arrayCopy[i + 1]];
+                const pivotFinalPos = i + 1;
+                sortedIndices.add(pivotFinalPos); // Mark pivot as sorted
+                
+                steps.push({
+                    array: [...arrayCopy],
+                    pivotPlaced: pivotFinalPos,
+                    partitionRange: {start: low, end: high},
+                    lessThanPivot: i,
+                    sortedIndices: Array.from(sortedIndices)
+                });
+                
+                return pivotFinalPos;
+            }
+            
+            function quickSort(low, high) {
+                if (low < high) {
+                    // Show current subarray being sorted
+                    steps.push({
+                        array: [...arrayCopy],
+                        subarray: {start: low, end: high},
+                        sortedIndices: Array.from(sortedIndices)
+                    });
+                    
+                    const pivotIndex = partition(low, high);
+                    
+                    // Recursively sort elements before and after partition
+                    quickSort(low, pivotIndex - 1);
+                    quickSort(pivotIndex + 1, high);
+                } else if (low === high) {
+                    // Single element is sorted
+                    sortedIndices.add(low);
+                    steps.push({
+                        array: [...arrayCopy],
+                        sortedIndices: Array.from(sortedIndices)
+                    });
+                }
+            }
+            
+            quickSort(0, arrayCopy.length - 1);
+            
+            // Show final sorted array
+            steps.push({
+                array: [...arrayCopy],
+                completed: true,
+                sortedIndices: Array.from(new Array(arrayCopy.length).keys())
+            });
+            
+            sortingSteps = steps;
+            updateTimeline();
+            await displayStep(sortingSteps[0]);
+            
+        } catch (error) {
+            console.error('Error during sorting:', error);
+            alert('An error occurred during sorting. Please try again.');
+            isSorting = false;
+            disableControls(false);
+        }
+    }
+}
+
+function displayStep(step) {
+    if (!step) return;
+    
+    const container = document.querySelector('.array-container');
+    container.innerHTML = '';
+    
+    const maxValue = Math.max(...step.array);
+    const containerHeight = container.clientHeight - 60;
+    const barWidth = 32;
+    const totalWidth = step.array.length * barWidth;
+    const startX = (container.clientWidth - totalWidth) / 2;
+    
+    step.array.forEach((value, index) => {
+        const barContainer = document.createElement('div');
+        barContainer.className = 'bar-container';
+        barContainer.style.left = `${startX + index * barWidth}px`;
+        
+        const bar = document.createElement('div');
+        bar.className = 'array-bar';
+        
+        // Color coding based on the current state
+        if (step.pivot === index) {
+            bar.style.backgroundColor = '#DC2626'; // Red for pivot
+        } else if (step.comparing === index) {
+            bar.style.backgroundColor = '#0EA5E9'; // Sky Blue for comparing
+        } else if (step.swapped && step.swapped.includes(index)) {
+            bar.style.backgroundColor = '#A855F7'; // Purple for swapping
+        } else if (step.pivotPlaced === index) {
+            bar.style.backgroundColor = '#F97316'; // Orange for sorted
+        } else if (step.sortedIndices && step.sortedIndices.includes(index)) {
+            bar.style.backgroundColor = '#F97316'; // Orange for sorted
+        } else {
+            bar.style.backgroundColor = '#475569'; // Slate for unsorted
+        }
+        
+        const height = Math.max(20, (value / maxValue) * containerHeight);
+        bar.style.height = `${height}px`;
+        
+        const valueLabel = document.createElement('div');
+        valueLabel.className = 'bar-value';
+        valueLabel.textContent = value;
+        
+        const indexLabel = document.createElement('div');
+        indexLabel.className = 'bar-index';
+        indexLabel.textContent = index;
+        
+        bar.appendChild(valueLabel);
+        barContainer.appendChild(bar);
+        barContainer.appendChild(indexLabel);
+        container.appendChild(barContainer);
+    });
+}
+</script>
+{% endblock %}
+
+{% block how_it_works %}
+<div class="how-it-works">
+    <h3>How Quick Sort Works</h3>
+    <p>Quick Sort is a highly efficient, comparison-based algorithm that uses a divide-and-conquer strategy. It works by selecting a 'pivot' element and partitioning the array around it.</p>
+    
+    <div class="steps">
+        <h4>Algorithm Steps:</h4>
+        <ol>
+            <li>Choose a pivot element from the array</li>
+            <li>Partition the array around the pivot:
+                <ul>
+                    <li>Move elements smaller than pivot to the left</li>
+                    <li>Move elements larger than pivot to the right</li>
+                    <li>Place pivot in its final position</li>
+                </ul>
+            </li>
+            <li>Recursively apply steps 1-2 to the sub-array before pivot</li>
+            <li>Recursively apply steps 1-2 to the sub-array after pivot</li>
+            <li>Combine the results (no explicit combination needed)</li>
+        </ol>
+    </div>
+    
+    <div class="complexity">
+        <h4>Time Complexity:</h4>
+        <ul>
+            <li>Best Case: O(n log n) - When pivot always divides array in half</li>
+            <li>Average Case: O(n log n)</li>
+            <li>Worst Case: O(n²) - When array is already sorted or reverse sorted</li>
+        </ul>
+        
+        <h4>Space Complexity:</h4>
+        <ul>
+            <li>O(log n) - Due to recursive call stack</li>
+            <li>O(n) - Worst case when array is already sorted</li>
+        </ul>
+        
+        <h4>Properties:</h4>
+        <ul>
+            <li>Stable: No</li>
+            <li>In-place: Yes</li>
+            <li>Adaptive: No</li>
+            <li>Partition-based: Uses partitioning as its core strategy</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

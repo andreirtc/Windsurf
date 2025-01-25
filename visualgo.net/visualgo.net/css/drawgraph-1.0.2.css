@@ -1,0 +1,207 @@
+.draw {
+    bottom: 173px;
+}
+
+#draw-status p {
+    color: black;
+}
+
+#draw-warn p {
+    color: #FFA824;
+}
+
+#draw-err p {
+    color: red;
+}
+
+#drawgraph {
+    height: 550px;
+    width: 1000px;
+    margin-left: -500px;
+    margin-top: -275px;
+}
+
+#drawgraph svg {
+    position: relative;
+    width: 900px;
+    height: 350px;
+    left: 0%;
+    margin-left: 0px;
+    z-index: 0;
+}
+
+#drawgraph-instructions {
+    height: 80px;
+    overflow: auto;
+    font-size: 16px;
+    margin-left: 50px;
+    margin-right: 50px;
+    margin-top: 20px;
+}
+
+#drawgraph #main {
+    padding: 5px 15px;
+}
+
+#drawgraph-actions {
+    padding-left: 50px;
+    bottom: 200px;
+    left: 200px;
+    float: left;
+}
+
+#drawgraph-actions p {
+    padding: 10px;
+    cursor: pointer;
+    float: left;
+}
+
+#drawgraph-actions #drawgraph-form {
+    padding: 10px;
+    cursor: pointer;
+    float: left;
+}
+
+#drawgraph-actions p:hover {
+    background: black;
+    color: white;
+}
+
+#drawgraph-actions p:first-of-type {
+    padding-top: 10px;
+}
+
+#drawgraph-actions p:last-of-type {
+    padding-bottom: 10px;
+}
+
+#drawgraph-actions-hide {
+    bottom: 60px;
+    left: 0px;
+    padding-left: 14px;
+    padding-right: 15px;
+}
+
+.button {
+    color: black;
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    margin: 4px 2px;
+    cursor: pointer;
+    transition-duration: 0.4s;
+}
+
+.done-button {
+    border: 1px solid #4CAF50;
+}
+
+.done-button:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.help-button {
+    border: 1px solid #4CAF50;
+}
+
+.help-button:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.clear-button {
+    border: 1px solid #f18900;
+}
+
+.clear-button:hover {
+    background-color: #f18900;
+    color: white;
+}
+
+.cancel-button {
+    border: 1px solid #cc4524;
+}
+
+.cancel-button:hover {
+    background-color: #cc4524;
+    color: white;
+}
+
+.graph-input-modal-background {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1;
+    /* Sit on top */
+    padding-top: 10%;
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.3)
+}
+
+.graph-input-background {
+    background-color: white;
+    margin: auto;
+    padding: 10px;
+    font-size: 20px;
+    line-height: 1.25;
+    border: 1px solid #888;
+    width: 50%;
+}
+
+.help-popup-modal-background {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1;
+    /* Sit on top */
+    padding-top: 300px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.3)
+}
+
+.help-popup-content {
+    background-color: white;
+    margin: auto;
+    padding: 10px;
+    font-size: 20px;
+    line-height: 1.25;
+    border: 1px solid #888;
+    width: 40%;
+}
+
+.graph-input-help-popup-content {
+    background-color: white;
+    margin: auto;
+    padding: 10px;
+    font-size: 20px;
+    line-height: 1.25;
+    border: 1px solid #888;
+    width: 40%;
+    overflow: auto
+}
+
+/*#samplejson-input { padding: 5px 8px; }
+#samplejson-go p {
+  padding: 8px 8px 7px; 
+  float:right;
+}
+*/

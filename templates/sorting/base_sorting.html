@@ -1,0 +1,756 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+/* Update breadcrumb styles */
+.breadcrumb-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 1.5rem auto;
+}
+
+.breadcrumb {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item a {
+    color: #9b4dca;
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: #ffffff;
+    opacity: 0.7;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #ffffff;
+    content: "/";
+    padding: 0 0.5rem;
+    opacity: 0.7;
+}
+
+.sorting-container {
+    padding: 10px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.array-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    gap: 2px;
+    position: relative;
+    width: 80%;
+    max-width: 1200px;
+}
+
+.bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    transition: left 0.3s ease;
+}
+
+.array-bar {
+    width: 30px;
+    background-color: #8b5cf6;
+    margin: 0 1px;
+    transition: all 0.3s ease;
+    border-radius: 2px 2px 0 0;
+}
+
+.bar-value {
+    position: absolute;
+    top: -25px;
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+}
+
+.bar-index {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.controls-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.control-group {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.control-group-title {
+    color: #9b4dca;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.dataset-input {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.btn-control {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #9b4dca;
+    color: white;
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.btn-control:hover {
+    background-color: #8a3db9;
+}
+
+.btn-control:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.timeline-container {
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+.timeline-slider {
+    width: 100%;
+    height: 15px;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    outline: none;
+    margin: 5px 0;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    background: #9b4dca;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+}
+
+.playback-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+}
+
+.speed-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.speed-slider {
+    -webkit-appearance: none;
+    width: 100px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+}
+
+.speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #9b4dca;
+    cursor: pointer;
+}
+
+.speed-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    min-width: 30px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .controls-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .array-container {
+        height: 50vh;
+    }
+    
+    .bar-value {
+        font-size: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb-container">
+    <div class="breadcrumb">
+        <div class="breadcrumb-item"><a href="{{ url_for('algorithms') }}">Algorithms</a></div>
+        <div class="breadcrumb-item active">{% block breadcrumb_name %}{% endblock %}</div>
+    </div>
+</div>
+
+<div class="sorting-container">
+    <h2 class="text-center mb-4">{% block algorithm_name %}{% endblock %}</h2>
+    
+    <div class="array-container" id="arrayContainer"></div>
+    
+    <div class="controls-container">
+        <div class="control-group">
+            <div class="control-group-title">Dataset</div>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="datasetInput" class="dataset-input" style="flex: 2;" placeholder="Enter numbers (e.g., 5,2,8,1,9)">
+                <input type="number" id="arraySize" class="dataset-input" style="flex: 1;" min="5" max="100" value="20" placeholder="Size">
+            </div>
+            <div class="preset-buttons">
+                <button class="btn-control" onclick="generateRandomArray()">Random</button>
+                <button class="btn-control" onclick="generateSortedArray()">Sorted</button>
+                <button class="btn-control" onclick="generateNearlySortedArray()">Nearly</button>
+                <button class="btn-control" onclick="generateArrayWithDuplicates()">Duplicates</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-group-title">Playback</div>
+            <div class="timeline-container">
+                <input type="range" id="timelineSlider" class="timeline-slider" min="0" max="100" value="0">
+                <div class="timeline-labels">
+                    <span id="currentTime">0:00</span>
+                    <span id="totalTime">0:00</span>
+                </div>
+            </div>
+            <div class="playback-controls">
+                <button class="btn-control" id="goToStart" title="Go to Start">
+                    <i class="fas fa-fast-backward"></i>
+                </button>
+                <button class="btn-control" id="stepBackward" title="Step Backward">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button class="btn-control" id="pauseResume" title="Play/Pause">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="btn-control" id="stepForward" title="Step Forward">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+                <button class="btn-control" id="goToEnd" title="Go to End">
+                    <i class="fas fa-fast-forward"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-group-title">Controls</div>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <button class="btn-control" id="startSort" style="flex: 1;">Sort</button>
+                <button class="btn-control" id="replay" style="flex: 1;" disabled>Replay</button>
+                <div class="speed-control">
+                    <input type="range" id="speedSlider" class="speed-slider" min="1" max="8" value="4">
+                    <span class="speed-label" id="speedLabel">4x</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="algorithm-info">
+        <h3>How it works</h3>
+        {% block algorithm_description %}{% endblock %}
+        
+        <h3 class="mt-4">Time Complexity</h3>
+        <table class="complexity-table">
+            <tr>
+                <th>Best Case</th>
+                <th>Average Case</th>
+                <th>Worst Case</th>
+                <th>Space Complexity</th>
+            </tr>
+            <tr>
+                {% block complexity %}{% endblock %}
+            </tr>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let array = [];
+let sortingSteps = [];
+let currentSortingStep = 0;
+let isSorting = false;
+let isPaused = false;
+const BASE_ANIMATION_SPEED = 300;  // Base animation speed in milliseconds
+
+// Define default colors that can be overridden by specific sorting algorithms
+let sortingColors = {
+    default: '#8b5cf6',    // Default violet/purple color
+    comparing: '#22c55e',  // Green for comparing
+    swapping: '#22c55e',   // Green for swapping
+    sorted: '#ec4899',     // Pink for sorted
+    currentMin: '#ef4444'  // Red for current minimum
+};
+
+// Function to set custom colors for specific sorting algorithm
+function setCustomColors(colors) {
+    sortingColors = { ...sortingColors, ...colors };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const datasetInput = document.getElementById('datasetInput');
+    datasetInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevent form submission
+            const input = datasetInput.value.trim();
+            if (input) {
+                array = input.split(',').map(num => parseInt(num.trim())).filter(num => !isNaN(num));
+                if (array.length > 0) {
+                    displayArray();
+                }
+            }
+        }
+    });
+    
+    // Add spacebar control for play/pause
+    document.addEventListener('keydown', function(e) {
+        if (e.code === 'Space' && isSorting) {
+            e.preventDefault(); // Prevent page scroll
+            pauseResume();
+        }
+    });
+    
+    // Add all control event listeners
+    document.getElementById('startSort').addEventListener('click', startSorting);
+    document.getElementById('pauseResume').addEventListener('click', pauseResume);
+    document.getElementById('replay').addEventListener('click', replay);
+    document.getElementById('goToStart').addEventListener('click', goToStart);
+    document.getElementById('stepBackward').addEventListener('click', stepBackward);
+    document.getElementById('stepForward').addEventListener('click', stepForward);
+    document.getElementById('goToEnd').addEventListener('click', goToEnd);
+    
+    document.getElementById('arraySize').addEventListener('change', generateRandomArray);
+    
+    document.getElementById('speedSlider').addEventListener('input', function(e) {
+        const speedValue = e.target.value;
+        document.getElementById('speedLabel').textContent = `${speedValue}x`;
+    });
+    
+    // Initialize with random array
+    generateRandomArray();
+});
+
+async function startSorting() {
+    if (isSorting) return;
+    
+    try {
+        isSorting = true;
+        isPaused = false;
+        currentSortingStep = 0;
+        disableControls(true);
+        
+        if (!array || array.length === 0) {
+            throw new Error('No array to sort');
+        }
+        
+        const response = await fetch('/api/sort/' + '{% block algorithm_id %}{% endblock %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ array: array })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Sorting failed: ' + response.statusText);
+        }
+        
+        const data = await response.json();
+        if (!data.steps || data.steps.length === 0) {
+            throw new Error('No sorting steps received');
+        }
+        
+        sortingSteps = data.steps;
+        updateTimeline();
+        visualizeSort();
+    } catch (error) {
+        console.error('Error during sorting:', error);
+        alert('An error occurred during sorting. Please try again.');
+        isSorting = false;
+        disableControls(false);
+    }
+}
+
+async function displayStep(step) {
+    if (!step) return;
+    
+    const container = document.querySelector('.array-container');
+    const maxValue = Math.max(...step.array);
+    const containerHeight = container.clientHeight - 60;
+    const barWidth = 32;
+    const totalWidth = step.array.length * barWidth;
+    const startX = (container.clientWidth - totalWidth) / 2;
+    
+    // First time setup of bars
+    if (container.children.length === 0) {
+        step.array.forEach((value, index) => {
+            const barContainer = document.createElement('div');
+            barContainer.className = 'bar-container';
+            barContainer.style.left = `${startX + index * barWidth}px`;
+            
+            const bar = document.createElement('div');
+            bar.className = 'array-bar';
+            
+            const valueLabel = document.createElement('div');
+            valueLabel.className = 'bar-value';
+            
+            const indexLabel = document.createElement('div');
+            indexLabel.className = 'bar-index';
+            indexLabel.textContent = index;
+            
+            bar.appendChild(valueLabel);
+            barContainer.appendChild(bar);
+            barContainer.appendChild(indexLabel);
+            container.appendChild(barContainer);
+        });
+    }
+    
+    // Reset all bars to their base state
+    const bars = container.querySelectorAll('.array-bar');
+    bars.forEach((bar, index) => {
+        // Remove all special classes and styles
+        bar.classList.remove('comparing', 'swapping', 'sorted');
+        bar.style.backgroundColor = sortingColors.default;
+        
+        // Only add sorted class if the element is in its final sorted position
+        if (step.sorted && step.sorted.includes(index)) {
+            bar.style.backgroundColor = sortingColors.sorted;
+        }
+        
+        // Handle current minimum
+        if (step.currentMin !== undefined && index === step.currentMin) {
+            bar.style.backgroundColor = sortingColors.currentMin;
+        }
+    });
+    
+    // Update positions and values
+    step.array.forEach((value, index) => {
+        const barContainer = container.children[index];
+        barContainer.style.left = `${startX + index * barWidth}px`;
+        
+        const bar = barContainer.querySelector('.array-bar');
+        const valueLabel = barContainer.querySelector('.bar-value');
+        
+        const height = Math.max(20, (value / maxValue) * containerHeight);
+        bar.style.height = `${height}px`;
+        valueLabel.textContent = value;
+    });
+    
+    // Handle comparing
+    if (step.comparing && step.comparing.length === 2) {
+        const [i, j] = step.comparing;
+        container.children[i].querySelector('.array-bar').style.backgroundColor = sortingColors.comparing;
+        container.children[j].querySelector('.array-bar').style.backgroundColor = sortingColors.comparing;
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+    }
+    
+    // Handle swapping
+    if (step.swapping && step.swapping.length === 2) {
+        const [i, j] = step.swapping;
+        const bar1 = container.children[i].querySelector('.array-bar');
+        const bar2 = container.children[j].querySelector('.array-bar');
+        
+        bar1.style.backgroundColor = sortingColors.swapping;
+        bar2.style.backgroundColor = sortingColors.swapping;
+        
+        const pos1 = parseFloat(container.children[i].style.left);
+        const pos2 = parseFloat(container.children[j].style.left);
+        
+        container.children[i].style.left = `${pos2}px`;
+        container.children[j].style.left = `${pos1}px`;
+        
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+        
+        const elements = Array.from(container.children);
+        elements.sort((a, b) => parseFloat(a.style.left) - parseFloat(b.style.left));
+        elements.forEach(element => container.appendChild(element));
+    }
+}
+
+function generateRandomArray() {
+    const size = parseInt(document.getElementById('arraySize').value) || 20;
+    array = Array.from({length: size}, () => Math.floor(Math.random() * 100) + 1);
+    displayArray();
+}
+
+function displayArray() {
+    const container = document.querySelector('.array-container');
+    container.innerHTML = '';
+    
+    const maxValue = Math.max(...array);
+    const containerHeight = container.clientHeight - 60;
+    const barWidth = 32;
+    const totalWidth = array.length * barWidth;
+    const startX = (container.clientWidth - totalWidth) / 2;
+    
+    array.forEach((value, index) => {
+        const barContainer = document.createElement('div');
+        barContainer.className = 'bar-container';
+        barContainer.style.left = `${startX + index * barWidth}px`;
+        
+        const bar = document.createElement('div');
+        bar.className = 'array-bar';
+        
+        const height = Math.max(20, (value / maxValue) * containerHeight);
+        bar.style.height = `${height}px`;
+        
+        const valueLabel = document.createElement('div');
+        valueLabel.className = 'bar-value';
+        valueLabel.textContent = value;
+        
+        const indexLabel = document.createElement('div');
+        indexLabel.className = 'bar-index';
+        indexLabel.textContent = index;
+        
+        bar.appendChild(valueLabel);
+        barContainer.appendChild(bar);
+        barContainer.appendChild(indexLabel);
+        container.appendChild(barContainer);
+    });
+    
+    sortingSteps = [];
+    currentSortingStep = 0;
+    isPaused = true;
+    isSorting = false;
+    updatePlaybackControls();
+    updateTimeline();
+}
+
+function getSpeedMultiplier() {
+    const speed = parseInt(document.getElementById('speedSlider').value);
+    return 1 / Math.pow(2, speed - 4);  // This will make 4x the default speed
+}
+
+function updateTimeline() {
+    const slider = document.getElementById('timelineSlider');
+    const currentTimeLabel = document.getElementById('currentTime');
+    const totalTimeLabel = document.getElementById('totalTime');
+    
+    if (sortingSteps && sortingSteps.length > 0) {
+        slider.max = sortingSteps.length - 1;
+        slider.value = currentSortingStep;
+        
+        const totalTime = (sortingSteps.length / getSpeedMultiplier());
+        const currentTime = (currentSortingStep / getSpeedMultiplier());
+        
+        currentTimeLabel.textContent = formatTime(currentTime);
+        totalTimeLabel.textContent = formatTime(totalTime);
+    } else {
+        slider.max = 100;
+        slider.value = 0;
+        currentTimeLabel.textContent = '0:00';
+        totalTimeLabel.textContent = '0:00';
+    }
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function disableControls(disabled) {
+    const controls = [
+        'arraySize',
+        'datasetInput',
+        'startSort',
+        'goToStart',
+        'stepBackward',
+        'stepForward',
+        'goToEnd',
+        'timelineSlider'
+    ];
+    
+    controls.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.disabled = disabled;
+    });
+    
+    const presetButtons = document.querySelectorAll('.preset-buttons .btn-control');
+    presetButtons.forEach(button => button.disabled = disabled);
+}
+
+function updatePlaybackControls() {
+    const isAtStart = currentSortingStep === 0;
+    const isAtEnd = currentSortingStep === sortingSteps.length - 1;
+    
+    document.getElementById('goToStart').disabled = isAtStart;
+    document.getElementById('stepBackward').disabled = isAtStart;
+    document.getElementById('stepForward').disabled = isAtEnd;
+    document.getElementById('goToEnd').disabled = isAtEnd;
+    
+    const pauseResumeBtn = document.getElementById('pauseResume');
+    pauseResumeBtn.innerHTML = `<i class="fas fa-${isPaused ? 'play' : 'pause'}"></i>`;
+}
+
+function pauseResume() {
+    if (!sortingSteps.length) return;
+    
+    isPaused = !isPaused;
+    updatePlaybackControls();
+    
+    if (!isPaused && currentSortingStep < sortingSteps.length) {
+        visualizeSort();
+    }
+}
+
+function replay() {
+    currentSortingStep = 0;
+    isPaused = false;
+    visualizeSort();
+    document.getElementById('replay').disabled = true;
+}
+
+function goToStart() {
+    currentSortingStep = 0;
+    displayStep(sortingSteps[currentSortingStep]);
+    updatePlaybackControls();
+    updateTimeline();
+}
+
+function stepBackward() {
+    if (currentSortingStep > 0) {
+        currentSortingStep--;
+        displayStep(sortingSteps[currentSortingStep]);
+        updatePlaybackControls();
+        updateTimeline();
+    }
+}
+
+function stepForward() {
+    if (currentSortingStep < sortingSteps.length - 1) {
+        currentSortingStep++;
+        displayStep(sortingSteps[currentSortingStep]);
+        updatePlaybackControls();
+        updateTimeline();
+    }
+}
+
+function goToEnd() {
+    currentSortingStep = sortingSteps.length - 1;
+    displayStep(sortingSteps[currentSortingStep]);
+    updatePlaybackControls();
+    updateTimeline();
+}
+
+function generateSortedArray() {
+    const size = parseInt(document.getElementById('arraySize').value) || 20;
+    array = Array.from({length: size}, (_, i) => i + 1);
+    displayArray();
+}
+
+function generateNearlySortedArray() {
+    const size = parseInt(document.getElementById('arraySize').value) || 20;
+    array = Array.from({length: size}, (_, i) => i + 1);
+    
+    for (let i = 0; i < size * 0.1; i++) {
+        const idx1 = Math.floor(Math.random() * size);
+        const idx2 = Math.floor(Math.random() * size);
+        [array[idx1], array[idx2]] = [array[idx2], array[idx1]];
+    }
+    displayArray();
+}
+
+function generateArrayWithDuplicates() {
+    const size = parseInt(document.getElementById('arraySize').value) || 20;
+    const uniqueValues = Math.ceil(size * 0.3); 
+    array = Array.from({length: size}, () => Math.floor(Math.random() * uniqueValues) + 1);
+    displayArray();
+}
+
+function parseCustomInput() {
+    const input = document.getElementById('datasetInput').value;
+    const numbers = input.split(',')
+        .map(num => parseInt(num.trim()))
+        .filter(num => !isNaN(num));
+    
+    if (numbers.length > 0) {
+        array = numbers;
+        document.getElementById('arraySize').value = numbers.length;
+        displayArray();
+    }
+}
+
+async function visualizeSort() {
+    while (currentSortingStep < sortingSteps.length && !isPaused) {
+        await displayStep(sortingSteps[currentSortingStep]);
+        currentSortingStep++;
+        updatePlaybackControls();
+        updateTimeline();
+        // Slower animation speed
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+    }
+    
+    if (currentSortingStep >= sortingSteps.length) {
+        isSorting = false;
+        document.getElementById('replay').disabled = false;
+    }
+}
+</script>
+{% endblock %}
+
+{% block algorithm_specific_js %}{% endblock %}

@@ -1,13 +1,15 @@
-from flask import Flask, render_template, jsonify, request, flash, redirect, url_for, g
-from flask_login import LoginManager, login_user, login_required, logout_user
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_cors import CORS
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Comment
-from stack import LinkedListStack, shunting_yard_step_by_step
-from queue_lab import Queue, Deque
-from linked_list import LinkedList
-from binary_tree import BinaryTree
-from graph import Graph
+
+# Import data structures from the new package
+from data_structures import LinkedList, Stack, Queue, Deque, BinaryTree, Graph
+from data_structures.stack import shunting_yard_step_by_step
+from algorithms.sorting import BubbleSort, SelectionSort, InsertionSort, MergeSort, QuickSort
+import random
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://windsurf.onrender.com", "http://localhost:5000", "http://127.0.0.1:5000", "http://127.0.0.1:5001"]}})
@@ -38,29 +40,29 @@ def home():
 def works():
     return render_template('works.html')
 
-@app.route('/works/stack')
+@app.route('/data-structure/stack')
 def stack():
-    return render_template('stack.html')
+    return render_template('data_structures/stack.html')
 
-@app.route('/works/queue')
+@app.route('/data-structure/queue')
 def queue():
-    return render_template('queue.html')
+    return render_template('data_structures/queue.html')
 
-@app.route('/works/deque')
+@app.route('/data-structure/deque')
 def deque():
-    return render_template('deque.html')
+    return render_template('data_structures/deque.html')
 
-@app.route('/works/linked-list')
+@app.route('/data-structure/linked-list')
 def linked_list():
-    return render_template('linked_list.html')
+    return render_template('data_structures/linked_list.html')
 
-@app.route('/works/binary-tree')
+@app.route('/data-structure/binary-tree')
 def binary_tree_page():
-    return render_template('binary_tree.html')
+    return render_template('data_structures/binary_tree.html')
 
-@app.route('/works/graph')
+@app.route('/data-structure/graph')
 def graph_page():
-    return render_template('graph.html')
+    return render_template('data_structures/graph.html')
 
 @app.route('/profile')
 def profile():
@@ -300,7 +302,97 @@ def clear_messages():
     
     return redirect(url_for('admin'))
 
-# Similar endpoints for other data structures...
+@app.route('/data_structures')
+def data_structures():
+    return render_template('data_structures.html')
+
+@app.route('/algorithms')
+def algorithms():
+    return render_template('algorithms.html')
+
+# Sorting algorithm routes
+@app.route('/bubble_sort')
+def bubble_sort():
+    return render_template('sorting/bubble_sort.html')
+
+@app.route('/selection_sort')
+def selection_sort():
+    return render_template('sorting/selection_sort.html')
+
+@app.route('/insertion_sort')
+def insertion_sort():
+    return render_template('sorting/insertion_sort.html')
+
+@app.route('/merge_sort')
+def merge_sort():
+    return render_template('sorting/merge_sort.html')
+
+@app.route('/quick_sort')
+def quick_sort():
+    return render_template('sorting/quick_sort.html')
+
+# API endpoints for sorting algorithms
+@app.route('/api/sort/<algorithm>', methods=['POST'])
+def sort_array(algorithm):
+    data = request.get_json()
+    array = data.get('array', [])
+    
+    if not array:
+        return jsonify({'error': 'No array provided'}), 400
+    
+    # Create the appropriate sorting algorithm instance
+    sorter = None
+    if algorithm == 'bubble':
+        sorter = BubbleSort()
+    elif algorithm == 'selection':
+        sorter = SelectionSort()
+    elif algorithm == 'insertion':
+        sorter = InsertionSort()
+    elif algorithm == 'merge':
+        sorter = MergeSort()
+    elif algorithm == 'quick':
+        sorter = QuickSort()
+    else:
+        return jsonify({'error': 'Invalid algorithm'}), 400
+    
+    # Sort the array and get the steps
+    sorter.set_array(array)
+    steps = sorter.sort()
+    
+    return jsonify({
+        'steps': steps,
+        'final_array': sorter.array
+    })
+
+@app.route('/api/generate_array', methods=['POST'])
+def generate_array():
+    data = request.get_json()
+    size = data.get('size', 50)
+    array_type = data.get('type', 'random')
+    
+    if size < 5 or size > 100:
+        return jsonify({'error': 'Array size must be between 5 and 100'}), 400
+    
+    array = []
+    
+    if array_type == 'random':
+        array = [random.randint(10, 300) for _ in range(size)]
+    elif array_type == 'sorted':
+        array = [i * (300/size) + 10 for i in range(size)]
+    elif array_type == 'nearly_sorted':
+        array = [i * (300/size) + 10 for i in range(size)]
+        # Swap a few random pairs to make it nearly sorted
+        swaps = int(size * 0.1)  # Swap 10% of elements
+        for _ in range(swaps):
+            i, j = random.sample(range(size), 2)
+            array[i], array[j] = array[j], array[i]
+    elif array_type == 'duplicates':
+        possible_values = [25, 50, 75, 100, 125, 150, 175, 200]
+        array = [random.choice(possible_values) for _ in range(size)]
+    else:
+        return jsonify({'error': 'Invalid array type'}), 400
+    
+    return jsonify({'array': array})
 
 with app.app_context():
     db.create_all()

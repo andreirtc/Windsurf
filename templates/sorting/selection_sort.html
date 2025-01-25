@@ -1,0 +1,215 @@
+{% extends "sorting/base_sorting.html" %}
+
+{% block breadcrumb_name %}Selection Sort{% endblock %}
+{% block algorithm_name %}Selection Sort{% endblock %}
+{% block algorithm_id %}selection{% endblock %}
+
+{% block algorithm_description %}
+<p>Selection Sort is a simple comparison-based sorting algorithm that works by repeatedly finding the minimum element from the unsorted portion of the array and placing it at the beginning.</p>
+
+<h4>Algorithm Steps:</h4>
+<ol>
+    <li>Find the minimum element in the unsorted array</li>
+    <li>Swap it with the first element of the unsorted portion</li>
+    <li>Move the boundary between sorted and unsorted portions one element to the right</li>
+    <li>Repeat until the entire array is sorted</li>
+</ol>
+
+<h4>Key Features:</h4>
+<ul>
+    <li>Simple implementation</li>
+    <li>Performs well on small arrays</li>
+    <li>Minimizes the number of swaps compared to bubble sort</li>
+    <li>Not stable by default (equal elements may change relative order)</li>
+    <li>In-place algorithm (requires no extra space)</li>
+</ul>
+{% endblock %}
+
+{% block complexity %}
+    <td>Ω(n²)</td>
+    <td>θ(n²)</td>
+    <td>O(n²)</td>
+    <td>O(1)</td>
+{% endblock %}
+
+{% block algorithm_specific_js %}
+<script>
+// Custom colors for Selection Sort
+const COLORS = {
+    default: '#8b5cf6',    // Violet for unsorted
+    comparing: '#22c55e',  // Green for comparing
+    swapping: '#10B981',   // Emerald for swapping
+    sorted: '#ec4899',     // Pink for sorted
+    currentMin: '#ef4444'  // Red for current minimum
+};
+
+async function visualizeSort() {
+    if (!isSorting) {
+        try {
+            isSorting = true;
+            isPaused = false;
+            currentSortingStep = 0;
+            disableControls(true);
+            
+            const steps = [];
+            const arrayCopy = [...array];
+            const n = arrayCopy.length;
+            
+            // Initial state
+            steps.push({
+                array: [...arrayCopy],
+                comparing: [],
+                swapping: [],
+                sorted: []
+            });
+            
+            // Selection Sort
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                
+                // Show current minimum
+                steps.push({
+                    array: [...arrayCopy],
+                    comparing: [],
+                    swapping: [],
+                    sorted: Array.from({length: i}, (_, idx) => idx),
+                    currentMin: minIdx
+                });
+                
+                // Find minimum in unsorted portion
+                for (let j = i + 1; j < n; j++) {
+                    // Show comparison
+                    steps.push({
+                        array: [...arrayCopy],
+                        comparing: [j],
+                        swapping: [],
+                        sorted: Array.from({length: i}, (_, idx) => idx),
+                        currentMin: minIdx
+                    });
+                    
+                    if (arrayCopy[j] < arrayCopy[minIdx]) {
+                        minIdx = j;
+                        // Show new minimum found
+                        steps.push({
+                            array: [...arrayCopy],
+                            comparing: [],
+                            swapping: [],
+                            sorted: Array.from({length: i}, (_, idx) => idx),
+                            currentMin: minIdx
+                        });
+                    }
+                }
+                
+                if (minIdx !== i) {
+                    // Show swapping
+                    steps.push({
+                        array: [...arrayCopy],
+                        comparing: [],
+                        swapping: [i, minIdx],
+                        sorted: Array.from({length: i}, (_, idx) => idx)
+                    });
+                    
+                    // Perform swap
+                    [arrayCopy[i], arrayCopy[minIdx]] = [arrayCopy[minIdx], arrayCopy[i]];
+                }
+                
+                // Show element in its final sorted position
+                steps.push({
+                    array: [...arrayCopy],
+                    comparing: [],
+                    swapping: [],
+                    sorted: Array.from({length: i + 1}, (_, idx) => idx)
+                });
+            }
+            
+            // Final state - all sorted
+            steps.push({
+                array: [...arrayCopy],
+                comparing: [],
+                swapping: [],
+                sorted: Array.from({length: n}, (_, idx) => idx)
+            });
+            
+            sortingSteps = steps;
+            updateTimeline();
+            
+            // Start visualization
+            for (let i = 0; i < sortingSteps.length && !isPaused; i++) {
+                currentSortingStep = i;
+                await displayStep(sortingSteps[i]);
+                if (isPaused) break;
+            }
+            
+            if (!isPaused) {
+                currentSortingStep = sortingSteps.length - 1;
+                updatePlaybackControls();
+            }
+            
+        } catch (error) {
+            console.error('Error during sorting:', error);
+            alert('An error occurred during sorting. Please try again.');
+        } finally {
+            isSorting = false;
+            disableControls(false);
+        }
+    }
+}
+
+async function displayStep(step) {
+    if (!step) return;
+    
+    const container = document.querySelector('.array-container');
+    const bars = container.querySelectorAll('.array-bar');
+    
+    // Update colors and positions
+    step.array.forEach((value, index) => {
+        const bar = bars[index];
+        
+        // Set color based on state
+        if (step.currentMin === index) {
+            bar.style.backgroundColor = COLORS.currentMin;
+        } else if (step.comparing && step.comparing.includes(index)) {
+            bar.style.backgroundColor = COLORS.comparing;
+        } else if (step.swapping && step.swapping.includes(index)) {
+            bar.style.backgroundColor = COLORS.swapping;
+        } else if (step.sorted && step.sorted.includes(index)) {
+            bar.style.backgroundColor = COLORS.sorted;
+        } else {
+            bar.style.backgroundColor = COLORS.default;
+        }
+    });
+    
+    // Add delay for animation
+    if (step.comparing || step.swapping) {
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+    }
+}
+</script>
+{% endblock %}
+
+{% block how_it_works %}
+<div class="how-it-works">
+    <h3>How Selection Sort Works</h3>
+    <p>Selection Sort is a simple sorting algorithm that works by repeatedly finding the minimum element from the unsorted portion of the array and placing it at the beginning.</p>
+    
+    <div class="steps">
+        <h4>Algorithm Steps:</h4>
+        <ol>
+            <li>Divide the array into sorted and unsorted portions (initially, sorted portion is empty)</li>
+            <li>Find the minimum element in the unsorted portion</li>
+            <li>Swap it with the first element of the unsorted portion</li>
+            <li>Expand the sorted portion by one element</li>
+            <li>Repeat steps 2-4 until the entire array is sorted</li>
+        </ol>
+    </div>
+    
+    <div class="complexity">
+        <h4>Time Complexity:</h4>
+        <ul>
+            <li>Best Case: O(n²)</li>
+            <li>Average Case: O(n²)</li>
+            <li>Worst Case: O(n²)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

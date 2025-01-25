@@ -4,54 +4,22 @@
 
 {% block content %}
 <div class="container works-container">
-    <h2 class="text-center mb-5">Data Structures</h2>
+    <h2 class="text-center mb-5">Choose Your Path</h2>
     
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="data-structure-card">
-                <h3>Linked List</h3>
-                <p>Visualization of linked list operations and node connections.</p>
-                <a href="{{ url_for('linked_list') }}" class="btn btn-custom">Explore Linked List</a>
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-5">
+            <div class="category-card">
+                <h3>Data Structures</h3>
+                <p>Explore various data structures including Linked Lists, Stacks, Queues, Deque, Binary Trees, and Graphs.</p>
+                <a href="{{ url_for('data_structures') }}" class="btn btn-custom">Explore Data Structures</a>
             </div>
         </div>
         
-        <div class="col-md-4">
-            <div class="data-structure-card">
-                <h3>Stack</h3>
-                <p>Implementation of Stack data structure with Shunting Yard Algorithm visualization.</p>
-                <a href="{{ url_for('stack') }}" class="btn btn-custom">Explore Stack</a>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="data-structure-card">
-                <h3>Queue</h3>
-                <p>Basic Queue operations with visual representation of FIFO principle.</p>
-                <a href="{{ url_for('queue') }}" class="btn btn-custom">Explore Queue</a>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="data-structure-card">
-                <h3>Deque</h3>
-                <p>Double-ended queue with operations at both ends.</p>
-                <a href="{{ url_for('deque') }}" class="btn btn-custom">Explore Deque</a>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="data-structure-card">
-                <h3>Binary Tree</h3>
-                <p>Tree visualization with traversal animations.</p>
-                <a href="{{ url_for('binary_tree_page') }}" class="btn btn-custom">Explore Binary Tree</a>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="data-structure-card">
-                <h3>Graph</h3>
-                <p>Metro Manila Railway Network - Find the shortest path between stations using graph algorithms.</p>
-                <a href="{{ url_for('graph_page') }}" class="btn btn-custom">Explore Graph</a>
+        <div class="col-md-5">
+            <div class="category-card">
+                <h3>Algorithms</h3>
+                <p>Discover and visualize different sorting algorithms including Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, and Quick Sort.</p>
+                <a href="{{ url_for('algorithms') }}" class="btn btn-custom">Explore Algorithms</a>
             </div>
         </div>
     </div>
@@ -60,35 +28,40 @@
 
 {% block extra_css %}
 <style>
-.data-structure-card {
+.category-card {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 2rem;
+    border-radius: 20px;
+    padding: 3rem;
     height: 100%;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    text-align: center;
 }
 
-.data-structure-card:hover {
-    transform: translateY(-5px);
+.category-card:hover {
+    transform: translateY(-10px);
     background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 5px 15px rgba(155, 77, 202, 0.2);
+    box-shadow: 0 10px 25px rgba(155, 77, 202, 0.3);
 }
 
-.data-structure-card h3 {
+.category-card h3 {
     color: #9b4dca;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
 }
 
-.data-structure-card p {
-    margin-bottom: 1.5rem;
+.category-card p {
+    margin-bottom: 2rem;
     flex-grow: 1;
+    font-size: 1.1rem;
 }
 
 .btn-custom {
-    align-self: flex-start;
+    font-size: 1.1rem;
+    padding: 0.75rem 2rem;
+    align-self: center;
 }
 </style>
 {% endblock %}

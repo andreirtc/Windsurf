@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Algorithms{% endblock %}
+
+{% block content %}
+<div class="container algorithms-container">
+    <h2 class="text-center mb-5">Sorting Algorithms</h2>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="algorithm-card">
+                <h3>Bubble Sort</h3>
+                <p>A simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.</p>
+                <a href="{{ url_for('bubble_sort') }}" class="btn btn-custom">Visualize Bubble Sort</a>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="algorithm-card">
+                <h3>Selection Sort</h3>
+                <p>Sorts an array by repeatedly finding the minimum element from the unsorted portion and placing it at the beginning.</p>
+                <a href="{{ url_for('selection_sort') }}" class="btn btn-custom">Visualize Selection Sort</a>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="algorithm-card">
+                <h3>Insertion Sort</h3>
+                <p>Builds the final sorted array one item at a time by comparing each element with the ones before it.</p>
+                <a href="{{ url_for('insertion_sort') }}" class="btn btn-custom">Visualize Insertion Sort</a>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="algorithm-card">
+                <h3>Merge Sort</h3>
+                <p>A divide-and-conquer algorithm that recursively breaks down a problem into smaller, more manageable subproblems until they become simple enough to solve directly.</p>
+                <a href="{{ url_for('merge_sort') }}" class="btn btn-custom">Visualize Merge Sort</a>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="algorithm-card">
+                <h3>Quick Sort</h3>
+                <p>An efficient, in-place sorting algorithm that uses a divide-and-conquer strategy to sort elements around a pivot.</p>
+                <a href="{{ url_for('quick_sort') }}" class="btn btn-custom">Visualize Quick Sort</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.algorithm-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 2rem;
+    height: 100%;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.algorithm-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 5px 15px rgba(155, 77, 202, 0.2);
+}
+
+.algorithm-card h3 {
+    color: #9b4dca;
+    margin-bottom: 1rem;
+}
+
+.algorithm-card p {
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+.btn-custom {
+    align-self: flex-start;
+}
+</style>
+{% endblock %}

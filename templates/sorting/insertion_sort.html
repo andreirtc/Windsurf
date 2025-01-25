@@ -1,0 +1,246 @@
+{% extends "sorting/base_sorting.html" %}
+
+{% block breadcrumb_name %}Insertion Sort{% endblock %}
+{% block algorithm_name %}Insertion Sort{% endblock %}
+{% block algorithm_id %}insertion{% endblock %}
+
+{% block algorithm_description %}
+<p>Insertion Sort is an intuitive sorting algorithm that builds the final sorted array one item at a time, similar to how most people sort playing cards in their hands.</p>
+
+<h4>Algorithm Steps:</h4>
+<ol>
+    <li>Start with the first element as a sorted portion of length one</li>
+    <li>Take the next element and insert it into its correct position in the sorted portion</li>
+    <li>To insert, shift all greater elements one position ahead</li>
+    <li>Repeat until all elements are processed</li>
+</ol>
+
+<h4>Key Features:</h4>
+<ul>
+    <li>Efficient for small data sets</li>
+    <li>Adaptive (runs faster on nearly sorted arrays)</li>
+    <li>Stable sorting algorithm (maintains relative order of equal elements)</li>
+    <li>In-place algorithm (uses constant extra space)</li>
+    <li>Online (can sort a list as it receives it)</li>
+</ul>
+{% endblock %}
+
+{% block complexity %}
+    <td>Ω(n)</td>
+    <td>θ(n²)</td>
+    <td>O(n²)</td>
+    <td>O(1)</td>
+{% endblock %}
+
+{% block algorithm_specific_js %}
+<script>
+// Custom colors for Insertion Sort
+const COLORS = {
+    default: '#6B7280',    // Cool Gray for unsorted
+    comparing: '#8B5CF6',  // Purple for comparing
+    swapping: '#EC4899',   // Pink for swapping
+    sorted: '#34D399'      // Emerald for sorted
+};
+
+async function displayStep(step) {
+    if (!step) return;
+    
+    const container = document.querySelector('.array-container');
+    const maxValue = Math.max(...step.array);
+    const containerHeight = container.clientHeight - 60;
+    const barWidth = 32;
+    const totalWidth = step.array.length * barWidth;
+    const startX = (container.clientWidth - totalWidth) / 2;
+    
+    // First time setup of bars
+    if (container.children.length === 0) {
+        step.array.forEach((value, index) => {
+            const barContainer = document.createElement('div');
+            barContainer.className = 'bar-container';
+            barContainer.style.left = `${startX + index * barWidth}px`;
+            
+            const bar = document.createElement('div');
+            bar.className = 'array-bar';
+            
+            const valueLabel = document.createElement('div');
+            valueLabel.className = 'bar-value';
+            valueLabel.textContent = value;
+            
+            const indexLabel = document.createElement('div');
+            indexLabel.className = 'bar-index';
+            indexLabel.textContent = index;
+            
+            bar.appendChild(valueLabel);
+            barContainer.appendChild(bar);
+            barContainer.appendChild(indexLabel);
+            container.appendChild(barContainer);
+        });
+    }
+    
+    // Update all bars
+    step.array.forEach((value, index) => {
+        const barContainer = container.children[index];
+        const bar = barContainer.querySelector('.array-bar');
+        const valueLabel = bar.querySelector('.bar-value');
+        
+        // Update position and height
+        barContainer.style.left = `${startX + index * barWidth}px`;
+        const height = Math.max(20, (value / maxValue) * containerHeight);
+        bar.style.height = `${height}px`;
+        valueLabel.textContent = value;
+        
+        // Set color based on state
+        if (step.comparing && step.comparing.includes(index)) {
+            bar.style.backgroundColor = COLORS.comparing;
+        } else if (step.swapping && step.swapping.includes(index)) {
+            bar.style.backgroundColor = COLORS.swapping;
+        } else if (step.sorted && step.sorted.includes(index)) {
+            bar.style.backgroundColor = COLORS.sorted;
+        } else {
+            bar.style.backgroundColor = COLORS.default;
+        }
+    });
+    
+    // Handle animation delay for comparing and swapping
+    if (step.comparing || step.swapping) {
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+    }
+}
+
+async function visualizeSort() {
+    if (!isSorting) {
+        try {
+            isSorting = true;
+            isPaused = false;
+            currentSortingStep = 0;
+            disableControls(true);
+            
+            const steps = [];
+            const arrayCopy = [...array];
+            const n = arrayCopy.length;
+            
+            // Initial state - only first element is sorted
+            steps.push({
+                array: [...arrayCopy],
+                current: -1,
+                comparing: -1,
+                sorted: -1
+            });
+            
+            // First element is considered sorted
+            steps.push({
+                array: [...arrayCopy],
+                current: -1,
+                comparing: -1,
+                sorted: 0
+            });
+            
+            // Start from the second element
+            for (let i = 1; i < n; i++) {
+                let current = arrayCopy[i];
+                let j = i - 1;
+                
+                // Show current element to be inserted
+                steps.push({
+                    array: [...arrayCopy],
+                    current: i,
+                    comparing: -1,
+                    sorted: i - 1
+                });
+                
+                // Compare with each element in sorted portion
+                while (j >= 0 && arrayCopy[j] > current) {
+                    // Show comparison
+                    steps.push({
+                        array: [...arrayCopy],
+                        current: i,
+                        comparing: j,
+                        sorted: i - 1
+                    });
+                    
+                    // Shift element right
+                    arrayCopy[j + 1] = arrayCopy[j];
+                    steps.push({
+                        array: [...arrayCopy],
+                        current: i,
+                        comparing: j,
+                        sorted: i - 1,
+                        swapping: j + 1
+                    });
+                    
+                    j--;
+                }
+                
+                // Place current element in its correct position
+                arrayCopy[j + 1] = current;
+                steps.push({
+                    array: [...arrayCopy],
+                    current: -1,
+                    comparing: -1,
+                    sorted: i,
+                    swapping: j + 1
+                });
+            }
+            
+            // Show final sorted array
+            steps.push({
+                array: [...arrayCopy],
+                current: -1,
+                comparing: -1,
+                sorted: n - 1,
+                completed: true
+            });
+            
+            sortingSteps = steps;
+            updateTimeline();
+            await displayStep(sortingSteps[0]);
+            
+        } catch (error) {
+            console.error('Error during sorting:', error);
+            alert('An error occurred during sorting. Please try again.');
+            isSorting = false;
+            disableControls(false);
+        }
+    }
+}
+</script>
+{% endblock %}
+
+{% block how_it_works %}
+<div class="how-it-works">
+    <h3>How Insertion Sort Works</h3>
+    <p>Insertion Sort is a simple sorting algorithm that builds the final sorted array one item at a time. It works similar to how you sort playing cards in your hands.</p>
+    
+    <div class="steps">
+        <h4>Algorithm Steps:</h4>
+        <ol>
+            <li>Start with the first element as a sorted portion of length one</li>
+            <li>Take the next element and compare it with the sorted portion</li>
+            <li>Insert the element at its correct position in the sorted portion</li>
+            <li>Shift the greater elements one position ahead to make space</li>
+            <li>Repeat steps 2-4 until all elements are processed</li>
+        </ol>
+    </div>
+    
+    <div class="complexity">
+        <h4>Time Complexity:</h4>
+        <ul>
+            <li>Best Case: O(n) - When array is already sorted</li>
+            <li>Average Case: O(n²)</li>
+            <li>Worst Case: O(n²) - When array is reverse sorted</li>
+        </ul>
+        
+        <h4>Space Complexity:</h4>
+        <ul>
+            <li>O(1) - Only uses a constant amount of extra space</li>
+        </ul>
+        
+        <h4>Properties:</h4>
+        <ul>
+            <li>Stable: Yes</li>
+            <li>In-place: Yes</li>
+            <li>Adaptive: Yes (performs better on partially sorted arrays)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
