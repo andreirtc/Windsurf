@@ -40,14 +40,15 @@
 
 {% block algorithm_specific_js %}
 <script>
-// Set custom colors for Quick Sort
-setCustomColors({
-    default: '#475569',    // Slate for unsorted
-    comparing: '#0EA5E9',  // Sky Blue for comparing
-    swapping: '#A855F7',   // Purple for swapping
-    sorted: '#F97316',     // Orange for sorted
-    pivot: '#DC2626'       // Red for pivot
-});
+// Custom colors for Quick Sort
+const COLORS = {
+    default: '#8b5cf6',    // Violet for unsorted
+    comparing: '#fca5a5',  // Light red for comparing
+    pivot: '#ef4444',      // Red for pivot
+    lessThan: '#facc15',   // Yellow for elements less than pivot
+    greaterThan: '#22c55e', // Green for elements greater than pivot
+    sorted: '#ec4899'      // Pink for sorted
+};
 
 async function visualizeSort() {
     if (!isSorting) {
@@ -61,166 +62,182 @@ async function visualizeSort() {
             const arrayCopy = [...array];
             const sortedIndices = new Set();
             
-            // Initial state - nothing is sorted
+            // Initial state
             steps.push({
                 array: [...arrayCopy],
-                sortedIndices: Array.from(sortedIndices)
+                comparing: [],
+                pivot: -1,
+                lessThan: [],
+                greaterThan: [],
+                sorted: []
             });
             
-            function partition(low, high) {
+            async function quickSort(low, high) {
+                if (low < high) {
+                    const pivotIndex = await partition(low, high);
+                    
+                    // Mark pivot as sorted
+                    sortedIndices.add(pivotIndex);
+                    steps.push({
+                        array: [...arrayCopy],
+                        comparing: [],
+                        pivot: -1,
+                        lessThan: [],
+                        greaterThan: [],
+                        sorted: Array.from(sortedIndices)
+                    });
+                    
+                    // Recursively sort sub-arrays
+                    await quickSort(low, pivotIndex - 1);
+                    await quickSort(pivotIndex + 1, high);
+                }
+            }
+            
+            async function partition(low, high) {
                 const pivot = arrayCopy[high];
+                let i = low - 1;
                 
                 // Show pivot selection
                 steps.push({
                     array: [...arrayCopy],
+                    comparing: [],
                     pivot: high,
-                    partitionRange: {start: low, end: high},
-                    sortedIndices: Array.from(sortedIndices)
+                    lessThan: [],
+                    greaterThan: [],
+                    sorted: Array.from(sortedIndices)
                 });
-                
-                let i = low - 1;
                 
                 for (let j = low; j < high; j++) {
                     // Show comparison with pivot
                     steps.push({
                         array: [...arrayCopy],
+                        comparing: [j],
                         pivot: high,
-                        comparing: j,
-                        partitionRange: {start: low, end: high},
-                        lessThanPivot: i,
-                        sortedIndices: Array.from(sortedIndices)
+                        lessThan: Array.from({length: i + 1}, (_, idx) => low + idx),
+                        greaterThan: Array.from({length: j - i - 1}, (_, idx) => i + 1 + idx),
+                        sorted: Array.from(sortedIndices)
                     });
                     
-                    if (arrayCopy[j] < pivot) {
+                    if (arrayCopy[j] <= pivot) {
                         i++;
-                        // Swap elements
                         if (i !== j) {
                             [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
                             steps.push({
                                 array: [...arrayCopy],
+                                comparing: [],
                                 pivot: high,
-                                swapped: [i, j],
-                                partitionRange: {start: low, end: high},
-                                lessThanPivot: i,
-                                sortedIndices: Array.from(sortedIndices)
+                                lessThan: Array.from({length: i + 1}, (_, idx) => low + idx),
+                                greaterThan: Array.from({length: j - i}, (_, idx) => i + 1 + idx),
+                                sorted: Array.from(sortedIndices)
                             });
                         }
                     }
                 }
                 
-                // Place pivot in its correct position
+                // Place pivot in its final position
                 [arrayCopy[i + 1], arrayCopy[high]] = [arrayCopy[high], arrayCopy[i + 1]];
-                const pivotFinalPos = i + 1;
-                sortedIndices.add(pivotFinalPos); // Mark pivot as sorted
-                
                 steps.push({
                     array: [...arrayCopy],
-                    pivotPlaced: pivotFinalPos,
-                    partitionRange: {start: low, end: high},
-                    lessThanPivot: i,
-                    sortedIndices: Array.from(sortedIndices)
+                    comparing: [],
+                    pivot: i + 1,
+                    lessThan: Array.from({length: i + 1}, (_, idx) => low + idx),
+                    greaterThan: Array.from({length: high - i - 1}, (_, idx) => i + 2 + idx),
+                    sorted: Array.from(sortedIndices)
                 });
                 
-                return pivotFinalPos;
+                return i + 1;
             }
             
-            function quickSort(low, high) {
-                if (low < high) {
-                    // Show current subarray being sorted
-                    steps.push({
-                        array: [...arrayCopy],
-                        subarray: {start: low, end: high},
-                        sortedIndices: Array.from(sortedIndices)
-                    });
-                    
-                    const pivotIndex = partition(low, high);
-                    
-                    // Recursively sort elements before and after partition
-                    quickSort(low, pivotIndex - 1);
-                    quickSort(pivotIndex + 1, high);
-                } else if (low === high) {
-                    // Single element is sorted
-                    sortedIndices.add(low);
-                    steps.push({
-                        array: [...arrayCopy],
-                        sortedIndices: Array.from(sortedIndices)
-                    });
-                }
-            }
+            // Start quicksort
+            await quickSort(0, arrayCopy.length - 1);
             
-            quickSort(0, arrayCopy.length - 1);
-            
-            // Show final sorted array
+            // Final state - all sorted
             steps.push({
                 array: [...arrayCopy],
-                completed: true,
-                sortedIndices: Array.from(new Array(arrayCopy.length).keys())
+                comparing: [],
+                pivot: -1,
+                lessThan: [],
+                greaterThan: [],
+                sorted: Array.from({length: arrayCopy.length}, (_, i) => i)
             });
             
             sortingSteps = steps;
+            displayStep(steps[0]);
             updateTimeline();
-            await displayStep(sortingSteps[0]);
             
         } catch (error) {
             console.error('Error during sorting:', error);
-            alert('An error occurred during sorting. Please try again.');
-            isSorting = false;
-            disableControls(false);
         }
     }
 }
 
-function displayStep(step) {
+async function displayStep(step) {
     if (!step) return;
     
     const container = document.querySelector('.array-container');
-    container.innerHTML = '';
-    
     const maxValue = Math.max(...step.array);
     const containerHeight = container.clientHeight - 60;
     const barWidth = 32;
     const totalWidth = step.array.length * barWidth;
     const startX = (container.clientWidth - totalWidth) / 2;
     
+    // First time setup of bars
+    if (container.children.length === 0) {
+        step.array.forEach((value, index) => {
+            const barContainer = document.createElement('div');
+            barContainer.className = 'bar-container';
+            barContainer.style.left = `${startX + index * barWidth}px`;
+            
+            const bar = document.createElement('div');
+            bar.className = 'array-bar';
+            
+            const valueLabel = document.createElement('div');
+            valueLabel.className = 'bar-value';
+            valueLabel.textContent = value;
+            
+            const indexLabel = document.createElement('div');
+            indexLabel.className = 'bar-index';
+            indexLabel.textContent = index;
+            
+            bar.appendChild(valueLabel);
+            barContainer.appendChild(bar);
+            barContainer.appendChild(indexLabel);
+            container.appendChild(barContainer);
+        });
+    }
+    
+    // Update all bars
     step.array.forEach((value, index) => {
-        const barContainer = document.createElement('div');
-        barContainer.className = 'bar-container';
+        const barContainer = container.children[index];
+        const bar = barContainer.querySelector('.array-bar');
+        const valueLabel = bar.querySelector('.bar-value');
+        
+        // Update position and height
         barContainer.style.left = `${startX + index * barWidth}px`;
-        
-        const bar = document.createElement('div');
-        bar.className = 'array-bar';
-        
-        // Color coding based on the current state
-        if (step.pivot === index) {
-            bar.style.backgroundColor = '#DC2626'; // Red for pivot
-        } else if (step.comparing === index) {
-            bar.style.backgroundColor = '#0EA5E9'; // Sky Blue for comparing
-        } else if (step.swapped && step.swapped.includes(index)) {
-            bar.style.backgroundColor = '#A855F7'; // Purple for swapping
-        } else if (step.pivotPlaced === index) {
-            bar.style.backgroundColor = '#F97316'; // Orange for sorted
-        } else if (step.sortedIndices && step.sortedIndices.includes(index)) {
-            bar.style.backgroundColor = '#F97316'; // Orange for sorted
-        } else {
-            bar.style.backgroundColor = '#475569'; // Slate for unsorted
-        }
-        
         const height = Math.max(20, (value / maxValue) * containerHeight);
         bar.style.height = `${height}px`;
-        
-        const valueLabel = document.createElement('div');
-        valueLabel.className = 'bar-value';
         valueLabel.textContent = value;
         
-        const indexLabel = document.createElement('div');
-        indexLabel.className = 'bar-index';
-        indexLabel.textContent = index;
-        
-        bar.appendChild(valueLabel);
-        barContainer.appendChild(bar);
-        barContainer.appendChild(indexLabel);
-        container.appendChild(barContainer);
+        // Set color based on state
+        if (step.pivot === index) {
+            bar.style.backgroundColor = COLORS.pivot;
+        } else if (step.comparing && step.comparing.includes(index)) {
+            bar.style.backgroundColor = COLORS.comparing;
+        } else if (step.lessThan && step.lessThan.includes(index)) {
+            bar.style.backgroundColor = COLORS.lessThan;
+        } else if (step.greaterThan && step.greaterThan.includes(index)) {
+            bar.style.backgroundColor = COLORS.greaterThan;
+        } else if (step.sorted && step.sorted.includes(index)) {
+            bar.style.backgroundColor = COLORS.sorted;
+        } else {
+            bar.style.backgroundColor = COLORS.default;
+        }
     });
+    
+    // Handle animation delay
+    if (step.comparing || step.pivot !== -1) {
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+    }
 }
 </script>
 {% endblock %}

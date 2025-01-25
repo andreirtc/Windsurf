@@ -36,11 +36,86 @@
 <script>
 // Custom colors for Insertion Sort
 const COLORS = {
-    default: '#6B7280',    // Cool Gray for unsorted
-    comparing: '#8B5CF6',  // Purple for comparing
-    swapping: '#EC4899',   // Pink for swapping
-    sorted: '#34D399'      // Emerald for sorted
+    default: '#8b5cf6',    // Violet for unsorted
+    comparing: '#ef4444',  // Red for key element being compared
+    shifting: '#facc15',   // Yellow for shifting elements
+    sorted: '#ec4899'      // Pink for sorted elements
 };
+
+async function visualizeSort() {
+    if (!isSorting) {
+        try {
+            isSorting = true;
+            isPaused = false;
+            currentSortingStep = 0;
+            disableControls(true);
+            
+            const steps = [];
+            const arrayCopy = [...array];
+            const n = arrayCopy.length;
+            
+            // Initial state
+            steps.push({
+                array: [...arrayCopy],
+                comparing: [],
+                shifting: [],
+                sorted: [0]  // First element is considered sorted initially
+            });
+            
+            // Insertion Sort
+            for (let i = 1; i < n; i++) {
+                let key = arrayCopy[i];
+                let j = i - 1;
+                
+                // Show current key element being compared
+                steps.push({
+                    array: [...arrayCopy],
+                    comparing: [i],
+                    shifting: [],
+                    sorted: Array.from({length: i}, (_, idx) => idx)
+                });
+                
+                while (j >= 0 && arrayCopy[j] > key) {
+                    // Show shifting of elements
+                    steps.push({
+                        array: [...arrayCopy],
+                        comparing: [i],
+                        shifting: [j],
+                        sorted: Array.from({length: i}, (_, idx) => idx)
+                    });
+                    
+                    arrayCopy[j + 1] = arrayCopy[j];
+                    j--;
+                }
+                
+                arrayCopy[j + 1] = key;
+                
+                // Show insertion of key element
+                steps.push({
+                    array: [...arrayCopy],
+                    comparing: [],
+                    shifting: [],
+                    sorted: Array.from({length: i + 1}, (_, idx) => idx)
+                });
+            }
+            
+            // Final state
+            steps.push({
+                array: [...arrayCopy],
+                comparing: [],
+                shifting: [],
+                sorted: Array.from({length: n}, (_, idx) => idx)
+            });
+            
+            sortingSteps = steps;
+            displayStep(steps[0]);
+            updateTimeline();
+            
+        } catch (error) {
+            console.error('Error during sorting:', error);
+        }
+    }
+}
 
 async function displayStep(step) {
     if (!step) return;
@@ -92,8 +167,8 @@ async function displayStep(step) {
         // Set color based on state
         if (step.comparing && step.comparing.includes(index)) {
             bar.style.backgroundColor = COLORS.comparing;
-        } else if (step.swapping && step.swapping.includes(index)) {
-            bar.style.backgroundColor = COLORS.swapping;
+        } else if (step.shifting && step.shifting.includes(index)) {
+            bar.style.backgroundColor = COLORS.shifting;
         } else if (step.sorted && step.sorted.includes(index)) {
             bar.style.backgroundColor = COLORS.sorted;
         } else {
@@ -101,106 +176,9 @@ async function displayStep(step) {
         }
     });
     
-    // Handle animation delay for comparing and swapping
-    if (step.comparing || step.swapping) {
+    // Handle animation delay for comparing and shifting
+    if (step.comparing || step.shifting) {
         await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
-    }
-}
-
-async function visualizeSort() {
-    if (!isSorting) {
-        try {
-            isSorting = true;
-            isPaused = false;
-            currentSortingStep = 0;
-            disableControls(true);
-            
-            const steps = [];
-            const arrayCopy = [...array];
-            const n = arrayCopy.length;
-            
-            // Initial state - only first element is sorted
-            steps.push({
-                array: [...arrayCopy],
-                current: -1,
-                comparing: -1,
-                sorted: -1
-            });
-            
-            // First element is considered sorted
-            steps.push({
-                array: [...arrayCopy],
-                current: -1,
-                comparing: -1,
-                sorted: 0
-            });
-            
-            // Start from the second element
-            for (let i = 1; i < n; i++) {
-                let current = arrayCopy[i];
-                let j = i - 1;
-                
-                // Show current element to be inserted
-                steps.push({
-                    array: [...arrayCopy],
-                    current: i,
-                    comparing: -1,
-                    sorted: i - 1
-                });
-                
-                // Compare with each element in sorted portion
-                while (j >= 0 && arrayCopy[j] > current) {
-                    // Show comparison
-                    steps.push({
-                        array: [...arrayCopy],
-                        current: i,
-                        comparing: j,
-                        sorted: i - 1
-                    });
-                    
-                    // Shift element right
-                    arrayCopy[j + 1] = arrayCopy[j];
-                    steps.push({
-                        array: [...arrayCopy],
-                        current: i,
-                        comparing: j,
-                        sorted: i - 1,
-                        swapping: j + 1
-                    });
-                    
-                    j--;
-                }
-                
-                // Place current element in its correct position
-                arrayCopy[j + 1] = current;
-                steps.push({
-                    array: [...arrayCopy],
-                    current: -1,
-                    comparing: -1,
-                    sorted: i,
-                    swapping: j + 1
-                });
-            }
-            
-            // Show final sorted array
-            steps.push({
-                array: [...arrayCopy],
-                current: -1,
-                comparing: -1,
-                sorted: n - 1,
-                completed: true
-            });
-            
-            sortingSteps = steps;
-            updateTimeline();
-            await displayStep(sortingSteps[0]);
-            
-        } catch (error) {
-            console.error('Error during sorting:', error);
-            alert('An error occurred during sorting. Please try again.');
-            isSorting = false;
-            disableControls(false);
-        }
     }
 }
 </script>
