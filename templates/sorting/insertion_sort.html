@@ -54,48 +54,74 @@ async function visualizeSort() {
             const arrayCopy = [...array];
             const n = arrayCopy.length;
             
-            // Initial state
+            // Initial state with first element sorted
             steps.push({
                 array: [...arrayCopy],
                 comparing: [],
                 shifting: [],
-                sorted: [0]  // First element is considered sorted initially
+                sorted: [0],
+                keyElement: -1,
+                positions: Array.from({length: n}, (_, i) => i)
             });
             
-            // Insertion Sort
             for (let i = 1; i < n; i++) {
-                let key = arrayCopy[i];
+                const key = arrayCopy[i];
                 let j = i - 1;
                 
-                // Show current key element being compared
-                steps.push({
-                    array: [...arrayCopy],
-                    comparing: [i],
-                    shifting: [],
-                    sorted: Array.from({length: i}, (_, idx) => idx)
-                });
-                
-                while (j >= 0 && arrayCopy[j] > key) {
-                    // Show shifting of elements
-                    steps.push({
-                        array: [...arrayCopy],
-                        comparing: [i],
-                        shifting: [j],
-                        sorted: Array.from({length: i}, (_, idx) => idx)
-                    });
-                    
-                    arrayCopy[j + 1] = arrayCopy[j];
-                    j--;
-                }
-                
-                arrayCopy[j + 1] = key;
-                
-                // Show insertion of key element
+                // Show current key element
                 steps.push({
                     array: [...arrayCopy],
                     comparing: [],
                     shifting: [],
-                    sorted: Array.from({length: i + 1}, (_, idx) => idx)
+                    sorted: Array.from({length: i}, (_, idx) => idx),
+                    keyElement: i,
+                    positions: Array.from({length: n}, (_, idx) => idx)
+                });
+                
+                // Create temporary array for animation
+                const tempArray = [...arrayCopy];
+                const positions = Array.from({length: n}, (_, idx) => idx);
+                
+                while (j >= 0 && arrayCopy[j] > key) {
+                    // Show comparison
+                    steps.push({
+                        array: [...tempArray],
+                        comparing: [j],
+                        shifting: [],
+                        sorted: Array.from({length: i}, (_, idx) => idx),
+                        keyElement: i,
+                        positions: [...positions]
+                    });
+                    
+                    // Shift element to the right
+                    tempArray[j + 1] = tempArray[j];
+                    positions[j + 1] = positions[j];
+                    
+                    steps.push({
+                        array: [...tempArray],
+                        comparing: [],
+                        shifting: [j + 1],
+                        sorted: Array.from({length: i}, (_, idx) => idx),
+                        keyElement: i,
+                        positions: [...positions]
+                    });
+                    
+                    j--;
+                }
+                
+                // Place key in correct position
+                tempArray[j + 1] = key;
+                positions[j + 1] = i;
+                arrayCopy[j + 1] = key;
+                
+                // Show insertion
+                steps.push({
+                    array: [...tempArray],
+                    comparing: [],
+                    shifting: [],
+                    sorted: Array.from({length: i + 1}, (_, idx) => idx),
+                    keyElement: -1,
+                    positions: [...positions]
                 });
             }
             
@@ -104,7 +130,9 @@ async function visualizeSort() {
                 array: [...arrayCopy],
                 comparing: [],
                 shifting: [],
-                sorted: Array.from({length: n}, (_, idx) => idx)
+                sorted: Array.from({length: n}, (_, i) => i),
+                keyElement: -1,
+                positions: Array.from({length: n}, (_, i) => i)
             });
             
             sortingSteps = steps;
@@ -123,8 +151,10 @@ async function displayStep(step) {
     const container = document.querySelector('.array-container');
     const maxValue = Math.max(...step.array);
     const containerHeight = container.clientHeight - 60;
-    const barWidth = 32;
-    const totalWidth = step.array.length * barWidth;
+    const barWidth = 28;  // Match the CSS width
+    const margin = 2;     // Match the CSS margin
+    const totalBarWidth = barWidth + (margin * 2);
+    const totalWidth = step.array.length * totalBarWidth;
     const startX = (container.clientWidth - totalWidth) / 2;
     
     // First time setup of bars
@@ -132,7 +162,7 @@ async function displayStep(step) {
         step.array.forEach((value, index) => {
             const barContainer = document.createElement('div');
             barContainer.className = 'bar-container';
-            barContainer.style.left = `${startX + index * barWidth}px`;
+            barContainer.style.left = `${startX + index * totalBarWidth}px`;
             
             const bar = document.createElement('div');
             bar.className = 'array-bar';
@@ -154,30 +184,39 @@ async function displayStep(step) {
     
     // Update all bars
     step.array.forEach((value, index) => {
-        const barContainer = container.children[index];
+        const barContainer = container.children[step.positions[index]];
         const bar = barContainer.querySelector('.array-bar');
         const valueLabel = bar.querySelector('.bar-value');
         
         // Update position and height
-        barContainer.style.left = `${startX + index * barWidth}px`;
+        const targetX = startX + index * totalBarWidth;
+        barContainer.style.left = `${targetX}px`;
         const height = Math.max(20, (value / maxValue) * containerHeight);
         bar.style.height = `${height}px`;
         valueLabel.textContent = value;
         
         // Set color based on state
-        if (step.comparing && step.comparing.includes(index)) {
+        if (index === step.keyElement) {
             bar.style.backgroundColor = COLORS.comparing;
+            // Lift the key element slightly
+            barContainer.style.transform = 'translateY(-20px)';
+        } else if (step.comparing && step.comparing.includes(index)) {
+            bar.style.backgroundColor = COLORS.comparing;
+            barContainer.style.transform = 'none';
         } else if (step.shifting && step.shifting.includes(index)) {
             bar.style.backgroundColor = COLORS.shifting;
+            barContainer.style.transform = 'none';
         } else if (step.sorted && step.sorted.includes(index)) {
             bar.style.backgroundColor = COLORS.sorted;
+            barContainer.style.transform = 'none';
         } else {
             bar.style.backgroundColor = COLORS.default;
+            barContainer.style.transform = 'none';
         }
     });
     
-    // Handle animation delay for comparing and shifting
-    if (step.comparing || step.shifting) {
+    // Handle animation delay
+    if (step.comparing.length > 0 || step.shifting.length > 0 || step.keyElement !== -1) {
         await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
     }
 }

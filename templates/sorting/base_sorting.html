@@ -50,10 +50,10 @@
     height: 400px;
     margin: 20px auto;
     padding: 20px;
-    gap: 2px;
     position: relative;
     width: 80%;
     max-width: 1200px;
+    perspective: 1000px;  /* For 3D transforms */
 }
 
 .bar-container {
@@ -61,15 +61,17 @@
     flex-direction: column;
     align-items: center;
     position: absolute;
-    transition: left 0.3s ease;
+    transition: all 0.3s ease;
+    transform-style: preserve-3d;
+    margin: 0 2px;  /* Add spacing between bars */
 }
 
 .array-bar {
-    width: 30px;
+    width: 28px;  /* Slightly reduced to account for margins */
     background-color: #8b5cf6;
-    margin: 0 1px;
     transition: all 0.3s ease;
     border-radius: 2px 2px 0 0;
+    transform-origin: bottom center;
 }
 
 .bar-value {
@@ -78,11 +80,13 @@
     width: 100%;
     text-align: center;
     font-size: 12px;
+    transition: all 0.3s ease;
 }
 
 .bar-index {
     margin-top: 5px;
     font-size: 12px;
+    transition: all 0.3s ease;
 }
 
 .controls-container {

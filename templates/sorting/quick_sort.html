@@ -69,12 +69,14 @@ async function visualizeSort() {
                 pivot: -1,
                 lessThan: [],
                 greaterThan: [],
-                sorted: []
+                sorted: [],
+                depth: new Array(arrayCopy.length).fill(0),
+                positions: Array.from({length: arrayCopy.length}, (_, i) => i)
             });
             
-            async function quickSort(low, high) {
+            async function quickSort(low, high, currentDepth) {
                 if (low < high) {
-                    const pivotIndex = await partition(low, high);
+                    const pivotIndex = await partition(low, high, currentDepth);
                     
                     // Mark pivot as sorted
                     sortedIndices.add(pivotIndex);
@@ -84,18 +86,26 @@ async function visualizeSort() {
                         pivot: -1,
                         lessThan: [],
                         greaterThan: [],
-                        sorted: Array.from(sortedIndices)
+                        sorted: Array.from(sortedIndices),
+                        depth: new Array(arrayCopy.length).fill(0),
+                        positions: Array.from({length: arrayCopy.length}, (_, i) => i)
                     });
                     
                     // Recursively sort sub-arrays
-                    await quickSort(low, pivotIndex - 1);
-                    await quickSort(pivotIndex + 1, high);
+                    await quickSort(low, pivotIndex - 1, currentDepth + 1);
+                    await quickSort(pivotIndex + 1, high, currentDepth + 1);
                 }
             }
             
-            async function partition(low, high) {
+            async function partition(low, high, currentDepth) {
                 const pivot = arrayCopy[high];
                 let i = low - 1;
+                
+                // Create depth array for visualization
+                const depth = new Array(arrayCopy.length).fill(0);
+                for (let idx = low; idx <= high; idx++) {
+                    depth[idx] = currentDepth;
+                }
                 
                 // Show pivot selection
                 steps.push({
@@ -104,8 +114,13 @@ async function visualizeSort() {
                     pivot: high,
                     lessThan: [],
                     greaterThan: [],
-                    sorted: Array.from(sortedIndices)
+                    sorted: Array.from(sortedIndices),
+                    depth: [...depth],
+                    positions: Array.from({length: arrayCopy.length}, (_, idx) => idx)
                 });
+                
+                // Track positions for animation
+                const positions = Array.from({length: arrayCopy.length}, (_, idx) => idx);
                 
                 for (let j = low; j < high; j++) {
                     // Show comparison with pivot
@@ -115,20 +130,27 @@ async function visualizeSort() {
                         pivot: high,
                         lessThan: Array.from({length: i + 1}, (_, idx) => low + idx),
                         greaterThan: Array.from({length: j - i - 1}, (_, idx) => i + 1 + idx),
-                        sorted: Array.from(sortedIndices)
+                        sorted: Array.from(sortedIndices),
+                        depth: [...depth],
+                        positions: [...positions]
                     });
                     
                     if (arrayCopy[j] <= pivot) {
                         i++;
                         if (i !== j) {
+                            // Swap elements and their positions
                             [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+                            [positions[i], positions[j]] = [positions[j], positions[i]];
+                            
                             steps.push({
                                 array: [...arrayCopy],
                                 comparing: [],
                                 pivot: high,
                                 lessThan: Array.from({length: i + 1}, (_, idx) => low + idx),
                                 greaterThan: Array.from({length: j - i}, (_, idx) => i + 1 + idx),
-                                sorted: Array.from(sortedIndices)
+                                sorted: Array.from(sortedIndices),
+                                depth: [...depth],
+                                positions: [...positions]
                             });
                         }
                     }
@@ -136,20 +158,24 @@ async function visualizeSort() {
                 
                 // Place pivot in its final position
                 [arrayCopy[i + 1], arrayCopy[high]] = [arrayCopy[high], arrayCopy[i + 1]];
+                [positions[i + 1], positions[high]] = [positions[high], positions[i + 1]];
+                
                 steps.push({
                     array: [...arrayCopy],
                     comparing: [],
                     pivot: i + 1,
                     lessThan: Array.from({length: i + 1}, (_, idx) => low + idx),
                     greaterThan: Array.from({length: high - i - 1}, (_, idx) => i + 2 + idx),
-                    sorted: Array.from(sortedIndices)
+                    sorted: Array.from(sortedIndices),
+                    depth: [...depth],
+                    positions: [...positions]
                 });
                 
                 return i + 1;
             }
             
             // Start quicksort
-            await quickSort(0, arrayCopy.length - 1);
+            await quickSort(0, arrayCopy.length - 1, 0);
             
             // Final state - all sorted
             steps.push({
@@ -158,7 +184,9 @@ async function visualizeSort() {
                 pivot: -1,
                 lessThan: [],
                 greaterThan: [],
-                sorted: Array.from({length: arrayCopy.length}, (_, i) => i)
+                sorted: Array.from({length: arrayCopy.length}, (_, i) => i),
+                depth: new Array(arrayCopy.length).fill(0),
+                positions: Array.from({length: arrayCopy.length}, (_, i) => i)
             });
             
             sortingSteps = steps;
@@ -177,16 +205,19 @@ async function displayStep(step) {
     const container = document.querySelector('.array-container');
     const maxValue = Math.max(...step.array);
     const containerHeight = container.clientHeight - 60;
-    const barWidth = 32;
-    const totalWidth = step.array.length * barWidth;
+    const barWidth = 28;  // Match the CSS width
+    const margin = 2;     // Match the CSS margin
+    const totalBarWidth = barWidth + (margin * 2);
+    const totalWidth = step.array.length * totalBarWidth;
     const startX = (container.clientWidth - totalWidth) / 2;
+    const depthOffset = 30;  // Pixels to move down for each depth level
     
     // First time setup of bars
     if (container.children.length === 0) {
         step.array.forEach((value, index) => {
             const barContainer = document.createElement('div');
             barContainer.className = 'bar-container';
-            barContainer.style.left = `${startX + index * barWidth}px`;
+            barContainer.style.left = `${startX + index * totalBarWidth}px`;
             
             const bar = document.createElement('div');
             bar.className = 'array-bar';
@@ -208,19 +239,26 @@ async function displayStep(step) {
     
     // Update all bars
     step.array.forEach((value, index) => {
-        const barContainer = container.children[index];
+        const barContainer = container.children[step.positions[index]];
         const bar = barContainer.querySelector('.array-bar');
         const valueLabel = bar.querySelector('.bar-value');
         
         // Update position and height
-        barContainer.style.left = `${startX + index * barWidth}px`;
+        const targetX = startX + index * totalBarWidth;
+        barContainer.style.left = `${targetX}px`;
         const height = Math.max(20, (value / maxValue) * containerHeight);
         bar.style.height = `${height}px`;
         valueLabel.textContent = value;
         
+        // Apply vertical offset based on depth
+        const translateY = step.depth[index] * depthOffset;
+        barContainer.style.transform = `translateY(${translateY}px)`;
+        
         // Set color based on state
         if (step.pivot === index) {
             bar.style.backgroundColor = COLORS.pivot;
+            // Lift pivot slightly
+            barContainer.style.transform = `translateY(${translateY - 20}px)`;
         } else if (step.comparing && step.comparing.includes(index)) {
             bar.style.backgroundColor = COLORS.comparing;
         } else if (step.lessThan && step.lessThan.includes(index)) {

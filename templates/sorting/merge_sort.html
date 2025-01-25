@@ -67,33 +67,39 @@ async function visualizeSort() {
                 comparing: [],
                 merging: [],
                 sorted: [],
-                subarrays: []
+                subarrays: [],
+                depth: new Array(arrayCopy.length).fill(0)
             });
             
-            // Recursive merge sort function
-            async function mergeSort(start, end) {
+            async function mergeSort(start, end, currentDepth) {
                 if (start < end) {
                     const mid = Math.floor((start + end) / 2);
                     
                     // Show division of array
+                    const depth = new Array(arrayCopy.length).fill(0);
+                    for (let i = start; i <= end; i++) {
+                        depth[i] = currentDepth;
+                    }
+                    
                     steps.push({
                         array: [...arrayCopy],
                         comparing: [],
                         merging: [],
                         sorted: [],
-                        subarrays: [[start, mid], [mid + 1, end]]
+                        subarrays: [[start, mid], [mid + 1, end]],
+                        depth: [...depth]
                     });
                     
                     // Recursively sort left and right halves
-                    await mergeSort(start, mid);
-                    await mergeSort(mid + 1, end);
+                    await mergeSort(start, mid, currentDepth + 1);
+                    await mergeSort(mid + 1, end, currentDepth + 1);
                     
                     // Merge the sorted halves
-                    await merge(start, mid, end);
+                    await merge(start, mid, end, currentDepth);
                 }
             }
             
-            async function merge(start, mid, end) {
+            async function merge(start, mid, end, currentDepth) {
                 const leftArray = arrayCopy.slice(start, mid + 1);
                 const rightArray = arrayCopy.slice(mid + 1, end + 1);
                 
@@ -101,13 +107,19 @@ async function visualizeSort() {
                 let j = 0;
                 let k = start;
                 
+                const depth = new Array(arrayCopy.length).fill(0);
+                for (let idx = start; idx <= end; idx++) {
+                    depth[idx] = currentDepth;
+                }
+                
                 // Show subarrays being merged
                 steps.push({
                     array: [...arrayCopy],
                     comparing: [],
                     merging: [],
                     sorted: [],
-                    subarrays: [[start, mid], [mid + 1, end]]
+                    subarrays: [[start, mid], [mid + 1, end]],
+                    depth: [...depth]
                 });
                 
                 while (i < leftArray.length && j < rightArray.length) {
@@ -117,7 +129,8 @@ async function visualizeSort() {
                         comparing: [start + i, mid + 1 + j],
                         merging: [],
                         sorted: [],
-                        subarrays: [[start, mid], [mid + 1, end]]
+                        subarrays: [[start, mid], [mid + 1, end]],
+                        depth: [...depth]
                     });
                     
                     if (leftArray[i] <= rightArray[j]) {
@@ -127,7 +140,8 @@ async function visualizeSort() {
                             comparing: [],
                             merging: [k],
                             sorted: [],
-                            subarrays: [[start, mid], [mid + 1, end]]
+                            subarrays: [[start, mid], [mid + 1, end]],
+                            depth: [...depth]
                         });
                         i++;
                     } else {
@@ -137,14 +151,14 @@ async function visualizeSort() {
                             comparing: [],
                             merging: [k],
                             sorted: [],
-                            subarrays: [[start, mid], [mid + 1, end]]
+                            subarrays: [[start, mid], [mid + 1, end]],
+                            depth: [...depth]
                         });
                         j++;
                     }
                     k++;
                 }
                 
-                // Copy remaining elements
                 while (i < leftArray.length) {
                     arrayCopy[k] = leftArray[i];
                     steps.push({
@@ -152,7 +166,8 @@ async function visualizeSort() {
                         comparing: [],
                         merging: [k],
                         sorted: [],
-                        subarrays: [[start, mid], [mid + 1, end]]
+                        subarrays: [[start, mid], [mid + 1, end]],
+                        depth: [...depth]
                     });
                     i++;
                     k++;
@@ -165,7 +180,8 @@ async function visualizeSort() {
                         comparing: [],
                         merging: [k],
                         sorted: [],
-                        subarrays: [[start, mid], [mid + 1, end]]
+                        subarrays: [[start, mid], [mid + 1, end]],
+                        depth: [...depth]
                     });
                     j++;
                     k++;
@@ -177,12 +193,13 @@ async function visualizeSort() {
                     comparing: [],
                     merging: [],
                     sorted: Array.from({length: end - start + 1}, (_, i) => start + i),
-                    subarrays: []
+                    subarrays: [],
+                    depth: new Array(arrayCopy.length).fill(0)
                 });
             }
             
             // Start merge sort
-            await mergeSort(0, arrayCopy.length - 1);
+            await mergeSort(0, arrayCopy.length - 1, 0);
             
             // Final state - all sorted
             steps.push({
@@ -190,7 +207,8 @@ async function visualizeSort() {
                 comparing: [],
                 merging: [],
                 sorted: Array.from({length: arrayCopy.length}, (_, i) => i),
-                subarrays: []
+                subarrays: [],
+                depth: new Array(arrayCopy.length).fill(0)
             });
             
             sortingSteps = steps;
@@ -209,16 +227,19 @@ async function displayStep(step) {
     const container = document.querySelector('.array-container');
     const maxValue = Math.max(...step.array);
     const containerHeight = container.clientHeight - 60;
-    const barWidth = 32;
-    const totalWidth = step.array.length * barWidth;
+    const barWidth = 28;  // Match the CSS width
+    const margin = 2;     // Match the CSS margin
+    const totalBarWidth = barWidth + (margin * 2);
+    const totalWidth = step.array.length * totalBarWidth;
     const startX = (container.clientWidth - totalWidth) / 2;
+    const depthOffset = 30;  // Pixels to move down for each depth level
     
     // First time setup of bars
     if (container.children.length === 0) {
         step.array.forEach((value, index) => {
             const barContainer = document.createElement('div');
             barContainer.className = 'bar-container';
-            barContainer.style.left = `${startX + index * barWidth}px`;
+            barContainer.style.left = `${startX + index * totalBarWidth}px`;
             
             const bar = document.createElement('div');
             bar.className = 'array-bar';
@@ -245,10 +266,14 @@ async function displayStep(step) {
         const valueLabel = bar.querySelector('.bar-value');
         
         // Update position and height
-        barContainer.style.left = `${startX + index * barWidth}px`;
+        barContainer.style.left = `${startX + index * totalBarWidth}px`;
         const height = Math.max(20, (value / maxValue) * containerHeight);
         bar.style.height = `${height}px`;
         valueLabel.textContent = value;
+        
+        // Apply vertical offset based on depth
+        const translateY = step.depth[index] * depthOffset;
+        barContainer.style.transform = `translateY(${translateY}px)`;
         
         // Set color based on state
         if (step.comparing && step.comparing.includes(index)) {
