@@ -6,6 +6,7 @@
 <div class="container mt-5">
     <div class="card bg-transparent mb-4">
         <div class="card-body content-wrapper">
+            <audio id="stationAnnouncement" style="display: none;"></audio>
             <nav aria-label="breadcrumb" class="breadcrumb-nav">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('data_structures') }}" class="text-purple">Data Structures</a></li>
@@ -282,6 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const endSelect = document.getElementById('endStation');
     const findPathBtn = document.getElementById('findPathBtn');
     const pathDetails = document.getElementById('pathDetails');
+    const stationAnnouncement = document.getElementById('stationAnnouncement');
     const svgObject = document.getElementById('railwayMap');
     const zoomInBtn = document.getElementById('zoomIn');
     const zoomOutBtn = document.getElementById('zoomOut');
@@ -784,8 +786,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         const nextStation = path[index + 1];
                         highlightConnection(station, nextStation);
                     }
+                    
+                    // Play station announcement when reaching the final station
+                    if (index === path.length - 1) {
+                        setTimeout(() => {
+                            playStationAnnouncement(station.station);
+                        }, 500); // Small delay after the final station is highlighted
+                    }
                 }
             }, index * 800);
+        });
+    }
+
+    function playStationAnnouncement(stationName) {
+        // Format the station name to match file naming
+        const formattedName = stationName.toLowerCase()
+            .replace(/\s+/g, '-')        // Replace spaces with hyphens
+            .replace(/[()]/g, '')        // Remove parentheses
+            .replace(/\./g, '')          // Remove periods
+            .replace(/\s*-\s*/g, '-');   // Clean up spaces around hyphens
+
+        const audioPath = `/static/audio/stations/${formattedName}.mp3`;
+        console.log('Playing audio:', audioPath); // Debug log
+        
+        stationAnnouncement.src = audioPath;
+        stationAnnouncement.play().catch(error => {
+            console.error('Error playing audio for station:', stationName, error);
         });
     }
 

@@ -16,13 +16,15 @@ class SortingAlgorithm(ABC):
         return self.steps
     
     def add_step(self, comparing: List[int] = None, swapping: List[int] = None, 
-                sorted_indices: List[int] = None, array: List[int] = None) -> None:
+                sorted_indices: List[int] = None, array: List[int] = None, currentMin: int = None, moving_down: bool = False) -> None:
         """Add a step to the sorting process."""
         step = {
             'array': array if array is not None else self.array.copy(),
             'comparing': comparing if comparing is not None else [],
             'swapping': swapping if swapping is not None else [],
-            'sorted': sorted_indices if sorted_indices is not None else []
+            'sorted': sorted_indices if sorted_indices is not None else [],
+            'currentMin': currentMin,
+            'moving_down': moving_down
         }
         self.steps.append(step)
     
@@ -76,183 +78,388 @@ class SelectionSort(SortingAlgorithm):
         n = len(self.array)
         sorted_indices = []
         
+        # Initial state - all bars violet
+        self.add_step(comparing=[], sorted_indices=[], currentMin=None)
+        
         for i in range(n):
             min_idx = i
             
-            # Add step to show the current position
-            self.add_step(comparing=[i], sorted_indices=sorted_indices)
+            # Start new iteration - show current minimum
+            step = {
+                'array': self.array.copy(),
+                'comparing': [],
+                'currentMin': min_idx,
+                'sorted': sorted_indices.copy(),
+                'swapping': []
+            }
+            self.steps.append(step)
             
-            for j in range(i+1, n):
-                # Add step to show comparison
-                self.add_step(comparing=[min_idx, j], sorted_indices=sorted_indices)
+            # Move green bar through each position
+            for j in range(i + 1, n):
+                # Show green bar at current position j
+                step = {
+                    'array': self.array.copy(),
+                    'comparing': [j],  # Only show current position as comparing
+                    'currentMin': min_idx,
+                    'sorted': sorted_indices.copy(),
+                    'swapping': []
+                }
+                self.steps.append(step)
                 
+                # Compare and update minimum if needed
                 if self.array[j] < self.array[min_idx]:
+                    # Update minimum position
                     min_idx = j
+                    
+                    # Show the new minimum
+                    step = {
+                        'array': self.array.copy(),
+                        'comparing': [j],  # Keep showing current position
+                        'currentMin': min_idx,
+                        'sorted': sorted_indices.copy(),
+                        'swapping': []
+                    }
+                    self.steps.append(step)
             
+            # After finding minimum, prepare for swap if needed
             if min_idx != i:
-                # Add step to show swap
-                self.add_step(swapping=[i, min_idx], sorted_indices=sorted_indices)
+                # Show positions that will be swapped
+                step = {
+                    'array': self.array.copy(),
+                    'comparing': [i],  # Show first swap position
+                    'currentMin': min_idx,
+                    'sorted': sorted_indices.copy(),
+                    'swapping': [i, min_idx]
+                }
+                self.steps.append(step)
                 
                 # Perform swap
                 self.array[i], self.array[min_idx] = self.array[min_idx], self.array[i]
                 
-                # Add step to show result of swap
-                self.add_step(sorted_indices=sorted_indices)
+                # Show state after swap
+                step = {
+                    'array': self.array.copy(),
+                    'comparing': [],
+                    'currentMin': None,
+                    'sorted': sorted_indices.copy(),
+                    'swapping': []
+                }
+                self.steps.append(step)
             
             # Mark current position as sorted
             sorted_indices.append(i)
-            self.add_step(sorted_indices=sorted_indices)
+            step = {
+                'array': self.array.copy(),
+                'comparing': [],
+                'currentMin': None,
+                'sorted': sorted_indices.copy(),
+                'swapping': []
+            }
+            self.steps.append(step)
+        
+        # Mark the last element as sorted if not already
+        if n-1 not in sorted_indices:
+            sorted_indices.append(n-1)
+            step = {
+                'array': self.array.copy(),
+                'comparing': [],
+                'currentMin': None,
+                'sorted': sorted_indices.copy(),
+                'swapping': []
+            }
+            self.steps.append(step)
         
         return self.steps
 
 class InsertionSort(SortingAlgorithm):
     def sort(self) -> List[Dict[str, Any]]:
         n = len(self.array)
-        sorted_indices = [0]  # First element is initially sorted
-        self.add_step(sorted_indices=sorted_indices)
+        sorted_indices = []
+        
+        # Initial state - all bars violet
+        self.add_step(comparing=[], sorted_indices=[], currentMin=None)
+        
+        # First element is already sorted
+        sorted_indices.append(0)
+        self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=None)
         
         for i in range(1, n):
             key = self.array[i]
             j = i - 1
             
-            # Add step to show the current element being inserted
-            self.add_step(comparing=[i], sorted_indices=sorted_indices)
+            # Show current key element before moving it
+            self.add_step(comparing=[i], sorted_indices=sorted_indices.copy(), currentMin=i)
+            
+            # Create a temporary array for visualization
+            temp_array = self.array.copy()
+            current_pos = i
             
             while j >= 0 and self.array[j] > key:
-                # Add step to show comparison
-                self.add_step(comparing=[j, j+1], sorted_indices=sorted_indices)
-                
-                # Add step to show swap
-                self.add_step(swapping=[j, j+1], sorted_indices=sorted_indices)
-                
-                # Perform move
+                # Move elements in the actual array
                 self.array[j + 1] = self.array[j]
-                j -= 1
                 
-                # Add step to show result of move
-                self.add_step(sorted_indices=sorted_indices)
+                # For visualization, show the key element moving down
+                temp_array = self.array.copy()
+                temp_array[j] = key  # Show key in its current comparison position
+                
+                self.add_step(
+                    comparing=[j],
+                    sorted_indices=sorted_indices.copy(),
+                    currentMin=i,
+                    array=temp_array
+                )
+                j -= 1
             
+            # Place key in correct position
             self.array[j + 1] = key
-            
-            # Mark current position as sorted
             sorted_indices.append(i)
-            sorted_indices.sort()  # Keep sorted indices in order
-            self.add_step(sorted_indices=sorted_indices)
+            sorted_indices.sort()  # Keep indices in order
+            
+            # Show final placement
+            self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=None)
+        
+        # Final state - all elements sorted
+        self.add_step(comparing=[], sorted_indices=list(range(n)), currentMin=None)
         
         return self.steps
 
 class MergeSort(SortingAlgorithm):
-    def merge(self, left: int, mid: int, right: int, sorted_indices: List[int]) -> None:
-        """Merge two sorted subarrays."""
-        left_half = self.array[left:mid + 1]
-        right_half = self.array[mid + 1:right + 1]
-        
-        i = j = 0
-        k = left
-        
-        while i < len(left_half) and j < len(right_half):
-            # Add step to show comparison
-            self.add_step(comparing=[left + i, mid + 1 + j], sorted_indices=sorted_indices)
-            
-            if left_half[i] <= right_half[j]:
-                self.array[k] = left_half[i]
-                i += 1
-            else:
-                self.array[k] = right_half[j]
-                j += 1
-            
-            # Add step to show placement
-            self.add_step(swapping=[k], sorted_indices=sorted_indices)
-            k += 1
-        
-        while i < len(left_half):
-            self.array[k] = left_half[i]
-            self.add_step(swapping=[k], sorted_indices=sorted_indices)
-            i += 1
-            k += 1
-        
-        while j < len(right_half):
-            self.array[k] = right_half[j]
-            self.add_step(swapping=[k], sorted_indices=sorted_indices)
-            j += 1
-            k += 1
-        
-        # Mark the merged section as sorted
-        sorted_indices.extend(range(left, right + 1))
-        sorted_indices = list(set(sorted_indices))  # Remove duplicates
-        self.add_step(sorted_indices=sorted_indices)
-    
-    def merge_sort(self, left: int, right: int, sorted_indices: List[int]) -> None:
-        """Recursive merge sort implementation."""
-        if left < right:
-            mid = (left + right) // 2
-            
-            self.merge_sort(left, mid, sorted_indices)
-            self.merge_sort(mid + 1, right, sorted_indices)
-            
-            self.merge(left, mid, right, sorted_indices)
-    
     def sort(self) -> List[Dict[str, Any]]:
+        # Clear previous steps and start fresh
+        self.steps = []
+        
+        def merge(left: int, mid: int, right: int, sorted_indices: List[int]) -> None:
+            left_half = self.array[left:mid + 1]
+            right_half = self.array[mid + 1:right + 1]
+            
+            i = j = 0
+            k = left
+            temp_array = self.array.copy()
+            
+            # Show the subarrays being merged
+            self.steps.append({
+                'array': self.array.copy(),
+                'comparing': [],
+                'merging': [],
+                'sorted': sorted_indices.copy(),
+                'subarrays': [[left, mid], [mid + 1, right]],
+                'depth': [0] * len(self.array)
+            })
+            
+            while i < len(left_half) and j < len(right_half):
+                # Compare elements
+                self.steps.append({
+                    'array': temp_array.copy(),
+                    'comparing': [left + i, mid + 1 + j],
+                    'merging': [],
+                    'sorted': sorted_indices.copy(),
+                    'subarrays': [[left, mid], [mid + 1, right]],
+                    'depth': [0] * len(self.array)
+                })
+                
+                if left_half[i] <= right_half[j]:
+                    temp_array[k] = left_half[i]
+                    self.array[k] = left_half[i]
+                    i += 1
+                else:
+                    temp_array[k] = right_half[j]
+                    self.array[k] = right_half[j]
+                    j += 1
+                
+                # Show merging step
+                self.steps.append({
+                    'array': temp_array.copy(),
+                    'comparing': [],
+                    'merging': [k],
+                    'sorted': sorted_indices.copy(),
+                    'subarrays': [[left, mid], [mid + 1, right]],
+                    'depth': [0] * len(self.array)
+                })
+                k += 1
+            
+            # Copy remaining elements from left half
+            while i < len(left_half):
+                temp_array[k] = left_half[i]
+                self.array[k] = left_half[i]
+                self.steps.append({
+                    'array': temp_array.copy(),
+                    'comparing': [],
+                    'merging': [k],
+                    'sorted': sorted_indices.copy(),
+                    'subarrays': [[left, mid], [mid + 1, right]],
+                    'depth': [0] * len(self.array)
+                })
+                i += 1
+                k += 1
+            
+            # Copy remaining elements from right half
+            while j < len(right_half):
+                temp_array[k] = right_half[j]
+                self.array[k] = right_half[j]
+                self.steps.append({
+                    'array': temp_array.copy(),
+                    'comparing': [],
+                    'merging': [k],
+                    'sorted': sorted_indices.copy(),
+                    'subarrays': [[left, mid], [mid + 1, right]],
+                    'depth': [0] * len(self.array)
+                })
+                j += 1
+                k += 1
+            
+            # Check if this subarray is sorted
+            is_sorted = True
+            for i in range(left, right):
+                if self.array[i] > self.array[i + 1]:
+                    is_sorted = False
+                    break
+            
+            # If sorted, mark all elements in this range as sorted
+            if is_sorted:
+                for idx in range(left, right + 1):
+                    if idx not in sorted_indices:
+                        sorted_indices.append(idx)
+                sorted_indices.sort()
+            
+            # Show the merged result
+            self.steps.append({
+                'array': self.array.copy(),
+                'comparing': [],
+                'merging': [],
+                'sorted': sorted_indices.copy(),
+                'subarrays': [],
+                'depth': [0] * len(self.array)
+            })
+        
+        def merge_sort(left: int, right: int, sorted_indices: List[int]) -> None:
+            if left < right:
+                mid = (left + right) // 2
+                
+                # Show current subarray being divided
+                self.steps.append({
+                    'array': self.array.copy(),
+                    'comparing': [],
+                    'merging': [],
+                    'sorted': sorted_indices.copy(),
+                    'subarrays': [[left, mid], [mid + 1, right]],
+                    'depth': [0] * len(self.array)
+                })
+                
+                # Recursively sort both halves
+                merge_sort(left, mid, sorted_indices)
+                merge_sort(mid + 1, right, sorted_indices)
+                
+                # Merge the sorted halves
+                merge(left, mid, right, sorted_indices)
+                
+                # After merging, check if the entire range is sorted
+                if left == 0 and right == len(self.array) - 1:
+                    # This is the final merge, mark all elements as sorted
+                    sorted_indices.clear()
+                    sorted_indices.extend(range(len(self.array)))
+                    self.steps.append({
+                        'array': self.array.copy(),
+                        'comparing': [],
+                        'merging': [],
+                        'sorted': sorted_indices.copy(),
+                        'subarrays': [],
+                        'depth': [0] * len(self.array)
+                    })
+        
+        # Initial state - no elements sorted
         sorted_indices = []
-        self.merge_sort(0, len(self.array) - 1, sorted_indices)
+        
+        # Start the merge sort immediately
+        merge_sort(0, len(self.array) - 1, sorted_indices)
+        
         return self.steps
 
 class QuickSort(SortingAlgorithm):
-    def partition(self, low: int, high: int, sorted_indices: List[int]) -> int:
-        """Partition the array and return the pivot index."""
-        pivot = self.array[high]
-        i = low - 1
-        
-        # Add step to show pivot
-        self.add_step(comparing=[high], sorted_indices=sorted_indices)
-        
-        for j in range(low, high):
-            # Add step to show comparison with pivot
-            self.add_step(comparing=[j, high], sorted_indices=sorted_indices)
-            
-            if self.array[j] <= pivot:
-                i += 1
-                
-                if i != j:
-                    # Add step to show swap
-                    self.add_step(swapping=[i, j], sorted_indices=sorted_indices)
-                    
-                    # Perform swap
-                    self.array[i], self.array[j] = self.array[j], self.array[i]
-                    
-                    # Add step to show result of swap
-                    self.add_step(sorted_indices=sorted_indices)
-        
-        if i + 1 != high:
-            # Add step to show final pivot swap
-            self.add_step(swapping=[i + 1, high], sorted_indices=sorted_indices)
-            
-            # Perform swap
-            self.array[i + 1], self.array[high] = self.array[high], self.array[i + 1]
-            
-            # Add step to show result of swap
-            self.add_step(sorted_indices=sorted_indices)
-        
-        return i + 1
-    
-    def quick_sort(self, low: int, high: int, sorted_indices: List[int]) -> None:
-        """Recursive quicksort implementation."""
-        if low < high:
-            pivot_idx = self.partition(low, high, sorted_indices)
-            
-            # Mark pivot as sorted
-            sorted_indices.append(pivot_idx)
-            self.add_step(sorted_indices=sorted_indices)
-            
-            self.quick_sort(low, pivot_idx - 1, sorted_indices)
-            self.quick_sort(pivot_idx + 1, high, sorted_indices)
-    
     def sort(self) -> List[Dict[str, Any]]:
-        sorted_indices = []
-        self.quick_sort(0, len(self.array) - 1, sorted_indices)
+        def partition(low: int, high: int, sorted_indices: List[int]) -> int:
+            # Use leftmost element as pivot
+            pivot = self.array[low]
+            i = low + 1
+            j = high
+            
+            # Show pivot element
+            self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=low)
+            
+            while True:
+                # Move i right while elements are less than pivot
+                while i <= j and self.array[i] <= pivot:
+                    self.add_step(comparing=[i], sorted_indices=sorted_indices.copy(), currentMin=low)
+                    i += 1
+                
+                # Move j left while elements are greater than pivot
+                while i <= j and self.array[j] > pivot:
+                    self.add_step(comparing=[j], sorted_indices=sorted_indices.copy(), currentMin=low)
+                    j -= 1
+                
+                # If pointers crossed, break
+                if i > j:
+                    break
+                
+                # Swap elements
+                self.array[i], self.array[j] = self.array[j], self.array[i]
+                self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=low, swapping=[i, j])
+            
+            # Place pivot in correct position
+            pivot_pos = j
+            if pivot_pos != low:
+                self.array[pivot_pos], self.array[low] = self.array[low], self.array[pivot_pos]
+                self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=low, swapping=[pivot_pos, low])
+            
+            # Check if pivot is in its final position
+            is_final_position = True
+            for idx in range(low, pivot_pos):
+                if self.array[idx] > self.array[pivot_pos]:
+                    is_final_position = False
+                    break
+            for idx in range(pivot_pos + 1, high + 1):
+                if self.array[idx] < self.array[pivot_pos]:
+                    is_final_position = False
+                    break
+            
+            if is_final_position and pivot_pos not in sorted_indices:
+                sorted_indices.append(pivot_pos)
+                sorted_indices.sort()
+                self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=None)
+            
+            return pivot_pos
         
-        # Mark all elements as sorted at the end
-        sorted_indices = list(range(len(self.array)))
-        self.add_step(sorted_indices=sorted_indices)
+        def quick_sort(low: int, high: int, sorted_indices: List[int]) -> None:
+            if low < high:
+                # Get pivot position
+                pivot_pos = partition(low, high, sorted_indices)
+                
+                # Recursively sort elements before and after pivot
+                quick_sort(low, pivot_pos - 1, sorted_indices)
+                quick_sort(pivot_pos + 1, high, sorted_indices)
+                
+                # Check if this range is fully sorted
+                is_range_sorted = True
+                for i in range(low, high):
+                    if self.array[i] > self.array[i + 1]:
+                        is_range_sorted = False
+                        break
+                
+                if is_range_sorted:
+                    for i in range(low, high + 1):
+                        if i not in sorted_indices:
+                            sorted_indices.append(i)
+                    sorted_indices.sort()
+                    self.add_step(comparing=[], sorted_indices=sorted_indices.copy(), currentMin=None)
+        
+        # Initial state - no elements sorted
+        sorted_indices = []
+        self.add_step(comparing=[], sorted_indices=[], currentMin=None)
+        
+        # Start quick sort
+        quick_sort(0, len(self.array) - 1, sorted_indices)
+        
+        # Final state - mark any remaining elements as sorted
+        final_sorted_indices = list(range(len(self.array)))
+        self.add_step(comparing=[], sorted_indices=final_sorted_indices, currentMin=None)
         
         return self.steps

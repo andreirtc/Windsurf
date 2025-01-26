@@ -34,157 +34,90 @@
 
 {% block algorithm_specific_js %}
 <script>
-// Custom colors for Selection Sort
-const COLORS = {
-    default: '#8b5cf6',    // Violet for unsorted
-    comparing: '#fca5a5',  // Light red for comparing
-    swapping: '#ef4444',   // Red for swapping
-    sorted: '#ec4899',     // Pink for sorted
-    currentMin: '#ef4444'  // Red for current minimum
-};
-
-async function visualizeSort() {
-    if (!isSorting) {
-        try {
-            isSorting = true;
-            isPaused = false;
-            currentSortingStep = 0;
-            disableControls(true);
-            
-            const steps = [];
-            const arrayCopy = [...array];
-            const n = arrayCopy.length;
-            
-            // Initial state
-            steps.push({
-                array: [...arrayCopy],
-                comparing: [],
-                swapping: [],
-                sorted: []
-            });
-            
-            // Selection Sort
-            for (let i = 0; i < n - 1; i++) {
-                let minIdx = i;
-                
-                // Show current minimum
-                steps.push({
-                    array: [...arrayCopy],
-                    comparing: [],
-                    swapping: [],
-                    sorted: Array.from({length: i}, (_, idx) => idx),
-                    currentMin: minIdx
-                });
-                
-                // Find minimum in unsorted portion
-                for (let j = i + 1; j < n; j++) {
-                    // Show comparison
-                    steps.push({
-                        array: [...arrayCopy],
-                        comparing: [j],
-                        swapping: [],
-                        sorted: Array.from({length: i}, (_, idx) => idx),
-                        currentMin: minIdx
-                    });
-                    
-                    if (arrayCopy[j] < arrayCopy[minIdx]) {
-                        minIdx = j;
-                        // Show new minimum found
-                        steps.push({
-                            array: [...arrayCopy],
-                            comparing: [],
-                            swapping: [],
-                            sorted: Array.from({length: i}, (_, idx) => idx),
-                            currentMin: minIdx
-                        });
-                    }
-                }
-                
-                if (minIdx !== i) {
-                    // Show swapping
-                    steps.push({
-                        array: [...arrayCopy],
-                        comparing: [],
-                        swapping: [i, minIdx],
-                        sorted: Array.from({length: i}, (_, idx) => idx)
-                    });
-                    
-                    // Perform swap
-                    [arrayCopy[i], arrayCopy[minIdx]] = [arrayCopy[minIdx], arrayCopy[i]];
-                }
-                
-                // Show element in its final sorted position
-                steps.push({
-                    array: [...arrayCopy],
-                    comparing: [],
-                    swapping: [],
-                    sorted: Array.from({length: i + 1}, (_, idx) => idx)
-                });
-            }
-            
-            // Final state - all sorted
-            steps.push({
-                array: [...arrayCopy],
-                comparing: [],
-                swapping: [],
-                sorted: Array.from({length: n}, (_, idx) => idx)
-            });
-            
-            sortingSteps = steps;
-            updateTimeline();
-            
-            // Start visualization
-            for (let i = 0; i < sortingSteps.length && !isPaused; i++) {
-                currentSortingStep = i;
-                await displayStep(sortingSteps[i]);
-                if (isPaused) break;
-            }
-            
-            if (!isPaused) {
-                currentSortingStep = sortingSteps.length - 1;
-                updatePlaybackControls();
-            }
-            
-        } catch (error) {
-            console.error('Error during sorting:', error);
-            alert('An error occurred during sorting. Please try again.');
-        } finally {
-            isSorting = false;
-            disableControls(false);
-        }
-    }
-}
-
-async function displayStep(step) {
-    if (!step) return;
+    // Override the default colors for Selection Sort
+    const customColors = {
+        default: '#8b5cf6',    // Violet for unsorted
+        comparing: '#22c55e',  // Green for current comparing element
+        currentMin: '#ef4444', // Red for current minimum
+        sorted: '#ec4899'      // Pink for sorted
+    };
     
-    const container = document.querySelector('.array-container');
-    const bars = container.querySelectorAll('.array-bar');
-    
-    // Update colors and positions
-    step.array.forEach((value, index) => {
-        const bar = bars[index];
-        
-        // Set color based on state
-        if (step.currentMin === index) {
-            bar.style.backgroundColor = COLORS.currentMin;
-        } else if (step.comparing && step.comparing.includes(index)) {
-            bar.style.backgroundColor = COLORS.comparing;
-        } else if (step.swapping && step.swapping.includes(index)) {
-            bar.style.backgroundColor = COLORS.swapping;
-        } else if (step.sorted && step.sorted.includes(index)) {
-            bar.style.backgroundColor = COLORS.sorted;
-        } else {
-            bar.style.backgroundColor = COLORS.default;
-        }
+    // Set custom colors when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        setCustomColors(customColors);
     });
-    
-    // Add delay for animation
-    if (step.comparing || step.swapping) {
-        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
-    }
-}
 </script>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Custom colors for Selection Sort animation bars */
+    #array .array-bar {
+        background-color: #8b5cf6; /* violet for unsorted bars */
+        transition: background-color 0.3s ease;
+    }
+
+    #array .array-bar.sorted {
+        background-color: #ec4899; /* pink for sorted bars */
+    }
+
+    #array .array-bar.current-min {
+        background-color: #ef4444; /* red for current minimum */
+    }
+
+    #array .array-bar.comparing {
+        background-color: #22c55e; /* green for comparing/moving bar */
+    }
+
+    /* Legend for the colors */
+    .color-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+    }
+
+    .color-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .color-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+    }
+
+    .color-box.unsorted { background-color: #8b5cf6; }
+    .color-box.sorted { background-color: #ec4899; }
+    .color-box.current-min { background-color: #ef4444; }
+    .color-box.comparing { background-color: #22c55e; }
+</style>
+{% endblock %}
+
+{% block extra_content %}
+<div class="color-legend">
+    <div class="color-legend-item">
+        <div class="color-box unsorted"></div>
+        <span>Unsorted</span>
+    </div>
+    <div class="color-legend-item">
+        <div class="color-box sorted"></div>
+        <span>Sorted</span>
+    </div>
+    <div class="color-legend-item">
+        <div class="color-box current-min"></div>
+        <span>Current Minimum</span>
+    </div>
+    <div class="color-legend-item">
+        <div class="color-box comparing"></div>
+        <span>Comparing</span>
+    </div>
+</div>
 {% endblock %}
 
 {% block how_it_works %}
@@ -195,21 +128,53 @@ async function displayStep(step) {
     <div class="steps">
         <h4>Algorithm Steps:</h4>
         <ol>
-            <li>Divide the array into sorted and unsorted portions (initially, sorted portion is empty)</li>
-            <li>Find the minimum element in the unsorted portion</li>
+            <li>Find the minimum element in the unsorted array</li>
             <li>Swap it with the first element of the unsorted portion</li>
-            <li>Expand the sorted portion by one element</li>
-            <li>Repeat steps 2-4 until the entire array is sorted</li>
+            <li>Move the boundary between sorted and unsorted portions one element to the right</li>
+            <li>Repeat until the entire array is sorted</li>
         </ol>
     </div>
-    
-    <div class="complexity">
-        <h4>Time Complexity:</h4>
-        <ul>
-            <li>Best Case: O(n²)</li>
-            <li>Average Case: O(n²)</li>
-            <li>Worst Case: O(n²)</li>
-        </ul>
+
+    <div class="pseudocode">
+        <h4>Pseudocode:</h4>
+        <pre><code>method selectionSort(array A[], integer N)
+    for each L in [0..N-2]               // O(N)
+        let X be the index of minimum element 
+        in A[L..N-1]                     // O(N)
+        swap(A[X], A[L])                 // O(1)
+Total: O(N²)</code></pre>
+    </div>
+
+    <div class="time-complexity">
+        <h4>Time & Space Complexity</h4>
+        <table class="complexity-table">
+            <thead>
+                <tr>
+                    <th>Complexity Type</th>
+                    <th>Best Case</th>
+                    <th>Average Case</th>
+                    <th>Worst Case</th>
+                    <th>Space</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Time Complexity</td>
+                    <td>Ω(n²)</td>
+                    <td>θ(n²)</td>
+                    <td>O(n²)</td>
+                    <td>O(1)</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="complexity-notes">
+            <p><strong>Notes:</strong></p>
+            <ul>
+                <li>Best Case: Array is already sorted</li>
+                <li>Worst Case: Array is reverse sorted</li>
+                <li>Space Complexity is O(1) as it only uses a constant amount of extra space</li>
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -6,31 +6,60 @@
 <div class="container home-container">
     <div class="hero-section text-center py-5 hero-content">
         <h1 class="display-2 mb-4">Welcome to Windsurf</h1>
-        <p class="lead mb-4">Exploring Data Structures Through Interactive Visualization</p>
+        <p class="lead mb-4">Exploring Data Structures & Algorithms Through Interactive Visualization</p>
         <div class="hero-buttons cta-buttons">
-            <a href="/works" class="btn btn-custom me-3">Explore Data Structures</a>
+            <a href="/data_structures" class="btn btn-custom me-3">Data Structures</a>
+            <a href="/algorithms" class="btn btn-custom me-3">Algorithms</a>
             <a href="/profile" class="btn btn-custom">Meet the Team</a>
         </div>
     </div>
 
     <div class="features-section py-4">
         <div class="row g-3">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6">
                 <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Data Structures</h3>
+                    <div class="feature-content">
+                        <ul class="feature-list">
+                            <li>Stack - LIFO data structure</li>
+                            <li>Queue - FIFO data structure</li>
+                            <li>Deque - Double-ended queue</li>
+                            <li>Linked List - Sequential data structure</li>
+                            <li>Binary Tree - Hierarchical data structure</li>
+                            <li>Graph - Metro Manila Railway Network</li>
+                        </ul>
+                        <a href="/data_structures" class="btn btn-outline-custom mt-3">Explore Data Structures</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-sort-amount-up"></i>
+                    </div>
+                    <h3>Sorting Algorithms</h3>
+                    <div class="feature-content">
+                        <ul class="feature-list">
+                            <li>Bubble Sort - Simple comparison-based sorting</li>
+                            <li>Selection Sort - In-place comparison sorting</li>
+                            <li>Insertion Sort - Adaptive sorting algorithm</li>
+                            <li>Merge Sort - Divide-and-conquer sorting</li>
+                            <li>Quick Sort - Efficient, in-place sorting</li>
+                        </ul>
+                        <a href="/algorithms" class="btn btn-outline-custom mt-3">Explore Algorithms</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="feature-card h-100 text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
                     <h3>Interactive Learning</h3>
-                    <p>Experience data structures through dynamic visualizations and step-by-step animations.</p>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="feature-card h-100">
-                    <h3>Multiple Data Structures</h3>
-                    <p>Explore Stack, Queue, Deque, Linked List, Binary Tree, and Graph implementations with real-time visualization.</p>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="feature-card h-100">
-                    <h3>Professional Team</h3>
-                    <p>Meet our dedicated team of developers passionate about coding.</p>
+                    <p>Experience data structures and algorithms through dynamic visualizations, step-by-step animations, and real-time demonstrations. Perfect for students and developers looking to master fundamental computer science concepts.</p>
                 </div>
             </div>
         </div>
@@ -79,12 +108,51 @@
     margin-bottom: 1rem;
 }
 
+.feature-icon {
+    font-size: 2.5rem;
+    color: #9b4dca;
+    margin-bottom: 1.5rem;
+}
+
+.feature-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.feature-list li {
+    padding: 0.5rem 0;
+    color: #e2e8f0;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.feature-list li:before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #9b4dca;
+}
+
+.btn-outline-custom {
+    color: #9b4dca;
+    border-color: #9b4dca;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-custom:hover {
+    color: white;
+    background-color: #9b4dca;
+}
+
 .hero-buttons {
     margin-top: 2rem;
 }
 
 .hero-buttons .btn {
-    min-width: 200px;
+    min-width: 160px;
 }
 
 @media (max-width: 768px) {

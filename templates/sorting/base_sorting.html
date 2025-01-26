@@ -226,6 +226,86 @@
     min-width: 30px;
 }
 
+/* Add styles for complexity table */
+.complexity-table {
+    width: 100%;
+    margin: 1rem 0;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.complexity-table th,
+.complexity-table td {
+    padding: 0.75rem 1rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.complexity-table th {
+    background: rgba(155, 77, 202, 0.2);
+    color: #ec4899;
+    font-weight: 600;
+}
+
+.complexity-table td {
+    color: #ffffff;
+}
+
+.complexity-table tr:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.complexity-notes {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.complexity-notes ul {
+    margin: 0.5rem 0 0 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.complexity-notes strong {
+    color: #ec4899;
+}
+
+/* Add styles for pseudocode */
+.pseudocode {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.pseudocode h4 {
+    color: #ec4899;
+    margin-bottom: 1rem;
+}
+
+.pseudocode pre {
+    margin: 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.pseudocode code {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    color: #ffffff;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+/* Comments in pseudocode */
+.pseudocode code span.comment {
+    color: #9ca3af;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .controls-container {
@@ -505,11 +585,11 @@ async function displayStep(step) {
     });
     
     // Handle comparing
-    if (step.comparing && step.comparing.length === 2) {
-        const [i, j] = step.comparing;
-        container.children[i].querySelector('.array-bar').style.backgroundColor = sortingColors.comparing;
-        container.children[j].querySelector('.array-bar').style.backgroundColor = sortingColors.comparing;
-        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+    if (step.comparing && step.comparing.length > 0) {
+        step.comparing.forEach(index => {
+            container.children[index].querySelector('.array-bar').style.backgroundColor = sortingColors.comparing;
+        });
+        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * 0.1 * getSpeedMultiplier()));
     }
     
     // Handle swapping

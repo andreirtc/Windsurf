@@ -41,14 +41,20 @@
 
 {% block algorithm_specific_js %}
 <script>
-// Custom colors for Merge Sort
+// Define the COLORS object first with more vibrant colors
 const COLORS = {
-    default: '#8b5cf6',    // Violet for unsorted
-    comparing: '#ef4444',  // Red for comparing elements
-    merging: '#facc15',    // Yellow for merging
-    sorted: '#ec4899',     // Pink for sorted
-    subarray: '#22c55e'    // Green for showing subarrays
+    default: '#8b5cf6',      // Default violet
+    comparing: '#22c55e',    // Bright green
+    sorted: '#ec4899',       // Pink
+    leftSubarray: '#3b82f6', // Bright blue
+    rightSubarray: '#f472b6', // Light pink
+    merging: '#fbbf24'       // Bright yellow
 };
+
+// Override the default colors when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setCustomColors(COLORS);
+});
 
 async function visualizeSort() {
     if (!isSorting) {
@@ -81,6 +87,7 @@ async function visualizeSort() {
                         depth[i] = currentDepth;
                     }
                     
+                    // Add step to show the division
                     steps.push({
                         array: [...arrayCopy],
                         comparing: [],
@@ -111,16 +118,6 @@ async function visualizeSort() {
                 for (let idx = start; idx <= end; idx++) {
                     depth[idx] = currentDepth;
                 }
-                
-                // Show subarrays being merged
-                steps.push({
-                    array: [...arrayCopy],
-                    comparing: [],
-                    merging: [],
-                    sorted: [],
-                    subarrays: [[start, mid], [mid + 1, end]],
-                    depth: [...depth]
-                });
                 
                 while (i < leftArray.length && j < rightArray.length) {
                     // Show comparison
@@ -159,6 +156,7 @@ async function visualizeSort() {
                     k++;
                 }
                 
+                // Copy remaining elements
                 while (i < leftArray.length) {
                     arrayCopy[k] = leftArray[i];
                     steps.push({
@@ -187,21 +185,22 @@ async function visualizeSort() {
                     k++;
                 }
                 
-                // Show sorted subarray
+                // Mark subarray as sorted
+                const sortedIndices = Array.from({length: end - start + 1}, (_, i) => start + i);
                 steps.push({
                     array: [...arrayCopy],
                     comparing: [],
                     merging: [],
-                    sorted: Array.from({length: end - start + 1}, (_, i) => start + i),
+                    sorted: sortedIndices,
                     subarrays: [],
                     depth: new Array(arrayCopy.length).fill(0)
                 });
             }
             
             // Start merge sort
-            await mergeSort(0, arrayCopy.length - 1, 0);
+            await mergeSort(0, array.length - 1, 0);
             
-            // Final state - all sorted
+            // Final state - mark all as sorted
             steps.push({
                 array: [...arrayCopy],
                 comparing: [],
@@ -211,57 +210,53 @@ async function visualizeSort() {
                 depth: new Array(arrayCopy.length).fill(0)
             });
             
-            sortingSteps = steps;
-            displayStep(steps[0]);
-            updateTimeline();
+            // Update the visualization with all steps
+            for (const step of steps) {
+                if (isPaused) {
+                    await new Promise(resolve => {
+                        const checkPause = () => {
+                            if (!isPaused) {
+                                resolve();
+                            } else {
+                                setTimeout(checkPause, 100);
+                            }
+                        };
+                        checkPause();
+                    });
+                }
+                await displayStep(step);
+                currentSortingStep++;
+                updateTimeline();
+            }
+            
+            isSorting = false;
+            disableControls(false);
+            updatePlaybackControls();
             
         } catch (error) {
             console.error('Error during sorting:', error);
+            isSorting = false;
+            disableControls(false);
+            updatePlaybackControls();
         }
     }
 }
 
-async function displayStep(step) {
+function displayStep(step) {
     if (!step) return;
     
     const container = document.querySelector('.array-container');
     const maxValue = Math.max(...step.array);
     const containerHeight = container.clientHeight - 60;
-    const barWidth = 28;  // Match the CSS width
-    const margin = 2;     // Match the CSS margin
+    const barWidth = 28;
+    const margin = 2;
     const totalBarWidth = barWidth + (margin * 2);
     const totalWidth = step.array.length * totalBarWidth;
     const startX = (container.clientWidth - totalWidth) / 2;
-    const depthOffset = 30;  // Pixels to move down for each depth level
-    
-    // First time setup of bars
-    if (container.children.length === 0) {
-        step.array.forEach((value, index) => {
-            const barContainer = document.createElement('div');
-            barContainer.className = 'bar-container';
-            barContainer.style.left = `${startX + index * totalBarWidth}px`;
-            
-            const bar = document.createElement('div');
-            bar.className = 'array-bar';
-            
-            const valueLabel = document.createElement('div');
-            valueLabel.className = 'bar-value';
-            valueLabel.textContent = value;
-            
-            const indexLabel = document.createElement('div');
-            indexLabel.className = 'bar-index';
-            indexLabel.textContent = index;
-            
-            bar.appendChild(valueLabel);
-            barContainer.appendChild(bar);
-            barContainer.appendChild(indexLabel);
-            container.appendChild(barContainer);
-        });
-    }
     
     // Update all bars
     step.array.forEach((value, index) => {
-        const barContainer = container.children[index];
+        const barContainer = container.children[index] || createBarContainer(index);
         const bar = barContainer.querySelector('.array-bar');
         const valueLabel = bar.querySelector('.bar-value');
         
@@ -271,28 +266,57 @@ async function displayStep(step) {
         bar.style.height = `${height}px`;
         valueLabel.textContent = value;
         
-        // Apply vertical offset based on depth
-        const translateY = step.depth[index] * depthOffset;
-        barContainer.style.transform = `translateY(${translateY}px)`;
+        // Set color based on state with priority
+        let color = COLORS.default;
         
-        // Set color based on state
         if (step.comparing && step.comparing.includes(index)) {
-            bar.style.backgroundColor = COLORS.comparing;
+            color = COLORS.comparing;
         } else if (step.merging && step.merging.includes(index)) {
-            bar.style.backgroundColor = COLORS.merging;
+            color = COLORS.merging;
         } else if (step.sorted && step.sorted.includes(index)) {
-            bar.style.backgroundColor = COLORS.sorted;
-        } else if (step.subarrays && step.subarrays.some(([start, end]) => index >= start && index <= end)) {
-            bar.style.backgroundColor = COLORS.subarray;
-        } else {
-            bar.style.backgroundColor = COLORS.default;
+            color = COLORS.sorted;
+        } else if (step.subarrays && step.subarrays.length > 0) {
+            const [leftStart, leftEnd] = step.subarrays[0];
+            const [rightStart, rightEnd] = step.subarrays[1] || [-1, -1];
+            
+            if (index >= leftStart && index <= leftEnd) {
+                color = COLORS.leftSubarray;
+            } else if (index >= rightStart && index <= rightEnd) {
+                color = COLORS.rightSubarray;
+            }
         }
+        
+        bar.style.backgroundColor = color;
     });
     
     // Handle animation delay
     if (step.comparing || step.merging) {
-        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
+        return new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
     }
+    return Promise.resolve();
+}
+
+function createBarContainer(index) {
+    const container = document.querySelector('.array-container');
+    const barContainer = document.createElement('div');
+    barContainer.className = 'bar-container';
+    
+    const bar = document.createElement('div');
+    bar.className = 'array-bar';
+    
+    const valueLabel = document.createElement('div');
+    valueLabel.className = 'bar-value';
+    
+    const indexLabel = document.createElement('div');
+    indexLabel.className = 'bar-index';
+    indexLabel.textContent = index;
+    
+    bar.appendChild(valueLabel);
+    barContainer.appendChild(bar);
+    barContainer.appendChild(indexLabel);
+    container.appendChild(barContainer);
+    
+    return barContainer;
 }
 </script>
 {% endblock %}
@@ -300,45 +324,80 @@ async function displayStep(step) {
 {% block how_it_works %}
 <div class="how-it-works">
     <h3>How Merge Sort Works</h3>
-    <p>Merge Sort is a divide-and-conquer algorithm that recursively breaks down a problem into smaller, more manageable subproblems until they become simple enough to solve directly.</p>
+    <p>Merge Sort is a divide-and-conquer algorithm that recursively divides the array into two halves, sorts them, and then merges the sorted halves to produce a final sorted array.</p>
     
     <div class="steps">
         <h4>Algorithm Steps:</h4>
         <ol>
-            <li>Divide the unsorted array into two halves</li>
+            <li>Divide the array into two halves</li>
             <li>Recursively sort the two halves</li>
-            <li>Merge the sorted halves to produce a single sorted array:
-                <ul>
-                    <li>Create a temporary array to store merged result</li>
-                    <li>Compare elements from both halves</li>
-                    <li>Place the smaller element in the temporary array</li>
-                    <li>Copy remaining elements from non-empty half</li>
-                </ul>
-            </li>
-            <li>Continue this process until the entire array is sorted</li>
+            <li>Merge the sorted halves by comparing elements</li>
+            <li>Place elements in correct order during merging</li>
+            <li>Continue until the entire array is sorted</li>
         </ol>
     </div>
+
+    <div class="pseudocode">
+        <h4>Pseudocode:</h4>
+        <pre><code>method mergeSort(array A, integer low, integer high)
+    if (low < high)                      // base case: low >= high
+        int mid = (low+high) / 2	
+        mergeSort(A, low  , mid)         // divide into two halves
+        mergeSort(A, mid+1, high)        // recursively sort them
+        merge(A, low, mid, high)         // conquer: merge subroutine
+
+method merge(array A, integer low, integer mid, integer high)
+    // subarray1 = A[low..mid], subarray2 = A[mid+1..high]
+    int N = high-low+1
+    create array B of size N             // temporary array
+    int left = low, right = mid+1, bIdx = 0
     
-    <div class="complexity">
-        <h4>Time Complexity:</h4>
-        <ul>
-            <li>Best Case: O(n log n)</li>
-            <li>Average Case: O(n log n)</li>
-            <li>Worst Case: O(n log n)</li>
-        </ul>
-        
-        <h4>Space Complexity:</h4>
-        <ul>
-            <li>O(n) - Requires additional space proportional to input size</li>
-        </ul>
-        
-        <h4>Properties:</h4>
-        <ul>
-            <li>Stable: Yes</li>
-            <li>In-place: No</li>
-            <li>Adaptive: No</li>
-            <li>Parallelizable: Yes (can be efficiently parallelized)</li>
-        </ul>
+    while (left <= mid && right <= high) // merging
+        if (A[left] <= A[right])
+            B[bIdx++] = A[left++]
+        else
+            B[bIdx++] = A[right++]
+    
+    while (left <= mid)                  // copy remaining left
+        B[bIdx++] = A[left++]
+    while (right <= high)                // copy remaining right
+        B[bIdx++] = A[right++]
+    
+    for (k = 0; k < N; k++)             // copy back to A
+        A[low+k] = B[k]</code></pre>
+    </div>
+
+    <div class="time-complexity">
+        <h4>Time & Space Complexity</h4>
+        <table class="complexity-table">
+            <thead>
+                <tr>
+                    <th>Complexity Type</th>
+                    <th>Best Case</th>
+                    <th>Average Case</th>
+                    <th>Worst Case</th>
+                    <th>Space</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Time Complexity</td>
+                    <td>Ω(n log n)</td>
+                    <td>θ(n log n)</td>
+                    <td>O(n log n)</td>
+                    <td>O(n)</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="complexity-notes">
+            <p><strong>Notes:</strong></p>
+            <ul>
+                <li>Time complexity is always O(n log n), regardless of input order</li>
+                <li>Space Complexity is O(n) due to the temporary arrays needed for merging</li>
+                <li>Stable sort: preserves the relative order of equal elements</li>
+                <li>Not in-place: requires extra space proportional to input size</li>
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}

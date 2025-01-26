@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}{% endblock %} - DSA Visualizer</title>
     <!-- Add Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -10,30 +10,99 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_css %}{% endblock %}
     <style>
+        /* Base styles for navbar */
+        .navbar {
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
         .navbar-brand {
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 1.5rem;
         }
+        
         .navbar-brand img {
-            height: 30px;
+            height: 35px;
             width: auto;
         }
+
+        .nav-item {
+            margin: 0 0.5rem;
+        }
+
+        /* Mobile optimizations */
         @media (max-width: 768px) {
+            .navbar {
+                padding: 0.5rem 0;
+            }
+
             .navbar-brand {
                 font-size: 1.2rem;
             }
+
             .navbar-brand img {
                 height: 25px;
             }
-            .navbar-nav {
-                background: rgba(0, 0, 0, 0.8);
+
+            .navbar-collapse {
+                background: rgba(0, 0, 0, 0.95);
+                backdrop-filter: blur(10px);
                 padding: 1rem;
                 border-radius: 10px;
-                margin-top: 1rem;
+                margin-top: 0.5rem;
+                border: 1px solid rgba(155, 77, 202, 0.2);
             }
+
+            .navbar-nav {
+                gap: 0.5rem;
+            }
+
             .nav-item {
-                margin: 0.5rem 0;
+                margin: 0;
+                width: 100%;
+            }
+
+            .nav-link {
+                padding: 0.75rem 1rem;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+            }
+
+            .nav-link:hover {
+                background: rgba(155, 77, 202, 0.2);
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0.5rem;
+            }
+
+            .navbar-toggler:focus {
+                box-shadow: none;
+            }
+
+            .navbar-toggler-icon {
+                width: 1.2em;
+                height: 1.2em;
+            }
+
+            main {
+                padding-top: 1rem;
+            }
+        }
+
+        /* Touch-friendly styles */
+        @media (hover: none) {
+            .nav-link:hover::after {
+                width: 0;
+            }
+
+            .nav-link:active {
+                background: rgba(155, 77, 202, 0.2);
             }
         }
     </style>
@@ -42,10 +111,11 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <img src="{{ url_for('static', filename='images/team/logo.png') }}">
+                <img src="{{ url_for('static', filename='images/team/logo.png') }}" alt="Windsurf Logo">
                 Windsurf
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -54,13 +124,13 @@
                         <a class="nav-link" href="/">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/profile">Profile</a>
+                        <a class="nav-link" href="/data_structures">Data Structures</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/works">Works</a>
+                        <a class="nav-link" href="/algorithms">Algorithms</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/contact">Contact</a>
+                        <a class="nav-link" href="/profile">Team</a>
                     </li>
                 </ul>
             </div>

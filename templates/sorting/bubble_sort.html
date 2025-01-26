@@ -17,6 +17,67 @@
 </ul>
 {% endblock %}
 
+{% block how_it_works %}
+<div class="how-it-works">
+    <h3>How Bubble Sort Works</h3>
+    <p>Bubble Sort is a simple comparison-based sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.</p>
+    
+    <div class="steps">
+        <h4>Algorithm Steps:</h4>
+        <ol>
+            <li>Start with the first element and compare it with the next element</li>
+            <li>If the first element is greater than the second element, swap them</li>
+            <li>Move to the next pair of elements and repeat step 2</li>
+            <li>Continue this process until the end of the array</li>
+            <li>Repeat steps 1-4 until no more swaps are needed</li>
+        </ol>
+    </div>
+
+    <div class="pseudocode">
+        <h4>Pseudocode:</h4>
+        <pre><code>method bubbleSort(array A, integer N)
+    for each R from N-1 down to 1        // repeat for N-1 iterations
+        for each i in [0..R-1]           // the 'unsorted region'
+            if A[i] > A[i+1]             // these two are not in order
+                swap(A[i], A[i+1])       // swap them in O(1)
+Total: O(N²) = (N-1)+(N-2)+...+1 iterations</code></pre>
+    </div>
+
+    <div class="time-complexity">
+        <h4>Time & Space Complexity</h4>
+        <table class="complexity-table">
+            <thead>
+                <tr>
+                    <th>Complexity Type</th>
+                    <th>Best Case</th>
+                    <th>Average Case</th>
+                    <th>Worst Case</th>
+                    <th>Space</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Time Complexity</td>
+                    <td>Ω(n)</td>
+                    <td>θ(n²)</td>
+                    <td>O(n²)</td>
+                    <td>O(1)</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="complexity-notes">
+            <p><strong>Notes:</strong></p>
+            <ul>
+                <li>Best Case: Array is already sorted</li>
+                <li>Worst Case: Array is reverse sorted</li>
+                <li>Space Complexity is O(1) as it only uses a constant amount of extra space</li>
+                <li>Early stopping when no swaps are made in a pass makes it adaptive</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block complexity %}
 <td>O(n)</td>
 <td>O(n²)</td>

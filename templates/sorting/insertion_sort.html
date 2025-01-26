@@ -4,6 +4,36 @@
 {% block algorithm_name %}Insertion Sort{% endblock %}
 {% block algorithm_id %}insertion{% endblock %}
 
+{% block extra_css %}
+{{ super() }}
+<style>
+    /* Special container for insertion sort */
+    .insertion-sort-container {
+        height: 600px !important;  /* Make container taller */
+        margin-bottom: 200px !important;  /* Add space below */
+        position: relative;
+        overflow: visible !important;  /* Allow bars to move outside */
+    }
+
+    /* Special styling for insertion sort bars */
+    .insertion-sort-container .bar-container {
+        position: absolute;
+        transition: transform 0.5s ease-in-out !important;  /* Slower transition */
+    }
+
+    /* Create a second row below for moving elements */
+    .insertion-sort-container .moving-row {
+        position: absolute;
+        bottom: -150px;  /* Position below the main array */
+        left: 0;
+        width: 100%;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
 {% block algorithm_description %}
 <p>Insertion Sort is an intuitive sorting algorithm that builds the final sorted array one item at a time, similar to how most people sort playing cards in their hands.</p>
 
@@ -34,230 +64,176 @@
 
 {% block algorithm_specific_js %}
 <script>
-// Custom colors for Insertion Sort
-const COLORS = {
-    default: '#8b5cf6',    // Violet for unsorted
-    comparing: '#ef4444',  // Red for key element being compared
-    shifting: '#facc15',   // Yellow for shifting elements
-    sorted: '#ec4899'      // Pink for sorted elements
-};
+    // Override the default colors for Insertion Sort
+    const customColors = {
+        default: '#8b5cf6',    // Violet for unsorted
+        comparing: '#22c55e',  // Green for current comparing element
+        currentMin: '#ef4444', // Red for current key element
+        sorted: '#ec4899'      // Pink for sorted
+    };
+    
+    // Set custom colors when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        setCustomColors(customColors);
+        
+        // Add special classes and elements for insertion sort
+        const container = document.querySelector('.array-container');
+        container.classList.add('insertion-sort-container');
+        
+        // Add the moving row
+        const movingRow = document.createElement('div');
+        movingRow.className = 'moving-row';
+        container.appendChild(movingRow);
+    });
 
-async function visualizeSort() {
-    if (!isSorting) {
-        try {
-            isSorting = true;
-            isPaused = false;
-            currentSortingStep = 0;
-            disableControls(true);
-            
-            const steps = [];
-            const arrayCopy = [...array];
-            const n = arrayCopy.length;
-            
-            // Initial state with first element sorted
-            steps.push({
-                array: [...arrayCopy],
-                comparing: [],
-                shifting: [],
-                sorted: [0],
-                keyElement: -1,
-                positions: Array.from({length: n}, (_, i) => i)
+    // Override the displayStep function to handle insertion animation
+    async function displayStep(step) {
+        if (!step) return;
+        
+        const container = document.querySelector('.array-container');
+        const maxValue = Math.max(...step.array);
+        const containerHeight = container.clientHeight - 260;  // Account for moving row
+        const barWidth = 28;
+        const margin = 2;
+        const totalBarWidth = barWidth + (margin * 2);
+        const totalWidth = step.array.length * totalBarWidth;
+        const startX = (container.clientWidth - totalWidth) / 2;
+        
+        // First time setup of bars
+        if (container.children.length === 1) {  // Only moving-row exists
+            step.array.forEach((value, index) => {
+                const barContainer = document.createElement('div');
+                barContainer.className = 'bar-container';
+                barContainer.style.left = `${startX + index * totalBarWidth}px`;
+                barContainer.style.zIndex = 1;
+                
+                const bar = document.createElement('div');
+                bar.className = 'array-bar';
+                
+                const valueLabel = document.createElement('div');
+                valueLabel.className = 'bar-value';
+                valueLabel.textContent = value;
+                
+                const indexLabel = document.createElement('div');
+                indexLabel.className = 'bar-index';
+                indexLabel.textContent = index;
+                
+                bar.appendChild(valueLabel);
+                barContainer.appendChild(bar);
+                barContainer.appendChild(indexLabel);
+                container.appendChild(barContainer);
             });
-            
-            for (let i = 1; i < n; i++) {
-                const key = arrayCopy[i];
-                let j = i - 1;
-                
-                // Show current key element
-                steps.push({
-                    array: [...arrayCopy],
-                    comparing: [],
-                    shifting: [],
-                    sorted: Array.from({length: i}, (_, idx) => idx),
-                    keyElement: i,
-                    positions: Array.from({length: n}, (_, idx) => idx)
-                });
-                
-                // Create temporary array for animation
-                const tempArray = [...arrayCopy];
-                const positions = Array.from({length: n}, (_, idx) => idx);
-                
-                while (j >= 0 && arrayCopy[j] > key) {
-                    // Show comparison
-                    steps.push({
-                        array: [...tempArray],
-                        comparing: [j],
-                        shifting: [],
-                        sorted: Array.from({length: i}, (_, idx) => idx),
-                        keyElement: i,
-                        positions: [...positions]
-                    });
-                    
-                    // Shift element to the right
-                    tempArray[j + 1] = tempArray[j];
-                    positions[j + 1] = positions[j];
-                    
-                    steps.push({
-                        array: [...tempArray],
-                        comparing: [],
-                        shifting: [j + 1],
-                        sorted: Array.from({length: i}, (_, idx) => idx),
-                        keyElement: i,
-                        positions: [...positions]
-                    });
-                    
-                    j--;
-                }
-                
-                // Place key in correct position
-                tempArray[j + 1] = key;
-                positions[j + 1] = i;
-                arrayCopy[j + 1] = key;
-                
-                // Show insertion
-                steps.push({
-                    array: [...tempArray],
-                    comparing: [],
-                    shifting: [],
-                    sorted: Array.from({length: i + 1}, (_, idx) => idx),
-                    keyElement: -1,
-                    positions: [...positions]
-                });
-            }
-            
-            // Final state
-            steps.push({
-                array: [...arrayCopy],
-                comparing: [],
-                shifting: [],
-                sorted: Array.from({length: n}, (_, i) => i),
-                keyElement: -1,
-                positions: Array.from({length: n}, (_, i) => i)
-            });
-            
-            sortingSteps = steps;
-            displayStep(steps[0]);
-            updateTimeline();
-            
-        } catch (error) {
-            console.error('Error during sorting:', error);
         }
-    }
-}
-
-async function displayStep(step) {
-    if (!step) return;
-    
-    const container = document.querySelector('.array-container');
-    const maxValue = Math.max(...step.array);
-    const containerHeight = container.clientHeight - 60;
-    const barWidth = 28;  // Match the CSS width
-    const margin = 2;     // Match the CSS margin
-    const totalBarWidth = barWidth + (margin * 2);
-    const totalWidth = step.array.length * totalBarWidth;
-    const startX = (container.clientWidth - totalWidth) / 2;
-    
-    // First time setup of bars
-    if (container.children.length === 0) {
+        
+        // Update all bars
         step.array.forEach((value, index) => {
-            const barContainer = document.createElement('div');
-            barContainer.className = 'bar-container';
-            barContainer.style.left = `${startX + index * totalBarWidth}px`;
+            const barContainer = container.children[index + 1];  // +1 to skip moving-row
+            const bar = barContainer.querySelector('.array-bar');
+            const valueLabel = bar.querySelector('.bar-value');
             
-            const bar = document.createElement('div');
-            bar.className = 'array-bar';
-            
-            const valueLabel = document.createElement('div');
-            valueLabel.className = 'bar-value';
+            // Update value and height
+            const height = Math.max(20, (value / maxValue) * containerHeight);
+            bar.style.height = `${height}px`;
             valueLabel.textContent = value;
             
-            const indexLabel = document.createElement('div');
-            indexLabel.className = 'bar-index';
-            indexLabel.textContent = index;
+            // Reset transformations
+            barContainer.style.transform = 'none';
+            bar.style.backgroundColor = customColors.default;
             
-            bar.appendChild(valueLabel);
-            barContainer.appendChild(bar);
-            barContainer.appendChild(indexLabel);
-            container.appendChild(barContainer);
+            // Handle sorted elements
+            if (step.sorted_indices.includes(index)) {
+                bar.style.backgroundColor = customColors.sorted;
+            }
+            
+            // Handle current element being inserted
+            if (index === step.currentMin) {
+                bar.style.backgroundColor = customColors.currentMin;
+                barContainer.style.zIndex = 2;
+                
+                if (step.comparing.length > 0) {
+                    // Move to the bottom row and slide
+                    const targetIndex = step.comparing[0];
+                    const targetX = startX + targetIndex * totalBarWidth;
+                    const currentX = startX + index * totalBarWidth;
+                    barContainer.style.transform = `translateY(150px) translateX(${targetX - currentX}px)`;
+                }
+            }
+            
+            // Handle element being compared with
+            if (step.comparing.includes(index)) {
+                bar.style.backgroundColor = customColors.comparing;
+            }
         });
-    }
-    
-    // Update all bars
-    step.array.forEach((value, index) => {
-        const barContainer = container.children[step.positions[index]];
-        const bar = barContainer.querySelector('.array-bar');
-        const valueLabel = bar.querySelector('.bar-value');
         
-        // Update position and height
-        const targetX = startX + index * totalBarWidth;
-        barContainer.style.left = `${targetX}px`;
-        const height = Math.max(20, (value / maxValue) * containerHeight);
-        bar.style.height = `${height}px`;
-        valueLabel.textContent = value;
-        
-        // Set color based on state
-        if (index === step.keyElement) {
-            bar.style.backgroundColor = COLORS.comparing;
-            // Lift the key element slightly
-            barContainer.style.transform = 'translateY(-20px)';
-        } else if (step.comparing && step.comparing.includes(index)) {
-            bar.style.backgroundColor = COLORS.comparing;
-            barContainer.style.transform = 'none';
-        } else if (step.shifting && step.shifting.includes(index)) {
-            bar.style.backgroundColor = COLORS.shifting;
-            barContainer.style.transform = 'none';
-        } else if (step.sorted && step.sorted.includes(index)) {
-            bar.style.backgroundColor = COLORS.sorted;
-            barContainer.style.transform = 'none';
-        } else {
-            bar.style.backgroundColor = COLORS.default;
-            barContainer.style.transform = 'none';
+        // Handle animation delay
+        if (step.comparing.length > 0 || step.currentMin !== null) {
+            await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
         }
-    });
-    
-    // Handle animation delay
-    if (step.comparing.length > 0 || step.shifting.length > 0 || step.keyElement !== -1) {
-        await new Promise(resolve => setTimeout(resolve, BASE_ANIMATION_SPEED * getSpeedMultiplier()));
     }
-}
 </script>
 {% endblock %}
 
 {% block how_it_works %}
 <div class="how-it-works">
     <h3>How Insertion Sort Works</h3>
-    <p>Insertion Sort is a simple sorting algorithm that builds the final sorted array one item at a time. It works similar to how you sort playing cards in your hands.</p>
+    <p>Insertion Sort is a simple sorting algorithm that builds the final sorted array one item at a time. It works by taking elements from the unsorted part and inserting them at their correct position in the sorted part.</p>
     
     <div class="steps">
         <h4>Algorithm Steps:</h4>
         <ol>
-            <li>Start with the first element as a sorted portion of length one</li>
-            <li>Take the next element and compare it with the sorted portion</li>
+            <li>Start with the first element as the sorted portion</li>
+            <li>Take the next element from the unsorted portion</li>
+            <li>Compare it with elements in the sorted portion from right to left</li>
             <li>Insert the element at its correct position in the sorted portion</li>
-            <li>Shift the greater elements one position ahead to make space</li>
-            <li>Repeat steps 2-4 until all elements are processed</li>
+            <li>Repeat steps 2-4 until all elements are sorted</li>
         </ol>
     </div>
-    
-    <div class="complexity">
-        <h4>Time Complexity:</h4>
-        <ul>
-            <li>Best Case: O(n) - When array is already sorted</li>
-            <li>Average Case: O(n²)</li>
-            <li>Worst Case: O(n²) - When array is reverse sorted</li>
-        </ul>
-        
-        <h4>Space Complexity:</h4>
-        <ul>
-            <li>O(1) - Only uses a constant amount of extra space</li>
-        </ul>
-        
-        <h4>Properties:</h4>
-        <ul>
-            <li>Stable: Yes</li>
-            <li>In-place: Yes</li>
-            <li>Adaptive: Yes (performs better on partially sorted arrays)</li>
-        </ul>
+
+    <div class="pseudocode">
+        <h4>Pseudocode:</h4>
+        <pre><code>method insertionSort(array A[], integer N)
+    for i in [1..N-1]                    // O(N)
+        let X be A[i]                    // next item to insert
+        for j from i-1 down to 0         // scan sorted portion
+            if A[j] > X
+                A[j+1] = A[j]            // shift right
+            else
+                break
+        A[j+1] = X                       // insert X at position j+1</code></pre>
+    </div>
+
+    <div class="time-complexity">
+        <h4>Time & Space Complexity</h4>
+        <table class="complexity-table">
+            <thead>
+                <tr>
+                    <th>Complexity Type</th>
+                    <th>Best Case</th>
+                    <th>Average Case</th>
+                    <th>Worst Case</th>
+                    <th>Space</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Time Complexity</td>
+                    <td>Ω(n)</td>
+                    <td>θ(n²)</td>
+                    <td>O(n²)</td>
+                    <td>O(1)</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="complexity-notes">
+            <p><strong>Notes:</strong></p>
+            <ul>
+                <li>Best Case: Array is already sorted</li>
+                <li>Worst Case: Array is reverse sorted</li>
+                <li>Space Complexity is O(1) as it sorts in-place</li>
+                <li>Performs well on small arrays and nearly sorted arrays</li>
+                <li>Adaptive: running time adapts to the initial order of elements</li>
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}
